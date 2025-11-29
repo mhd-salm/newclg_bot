@@ -1,4 +1,4 @@
-const BACKEND_URL = "http://127.0.0.1:4000/chat";
+const BACKEND_URL = "https://newclg-bot-backend.onrender.com/chat";
 const STORAGE_KEY = "campusguide_chat";
 const SESSION_KEY = "campusguide_session";
 
@@ -476,4 +476,5 @@ if (!localStorage.getItem("cg_seen_before")) {
   widget.classList.remove("hidden");
   localStorage.setItem("cg_seen_before", "1");
 }
+
 
