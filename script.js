@@ -4,7 +4,7 @@ const SESSION_KEY = "campusguide_session";
 
 // ---------------------------
 // TIMETABLE DATA (from PDF)
-// ---------------------------
+// --------------------------
 
 const TIMETABLE = {
   I: {
@@ -476,5 +476,6 @@ if (!localStorage.getItem("cg_seen_before")) {
   widget.classList.remove("hidden");
   localStorage.setItem("cg_seen_before", "1");
 }
+
 
 
