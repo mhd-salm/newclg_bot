@@ -5,7 +5,7 @@ const SESSION_KEY = "campusguide_session";
 // ---------------------------
 // TIMETABLE DATA (from PDF)
 // --------------------------
-/*
+
 const TIMETABLE = {
   I: {
     1: [
@@ -146,7 +146,7 @@ const YEAR_LABELS = {
   II: "II B.Sc (AI)",
   III: "III B.Sc (AI)"
 };
-*/
+
 // ---------------------------
 // DOM ELEMENTS
 // ---------------------------
@@ -476,6 +476,7 @@ if (!localStorage.getItem("cg_seen_before")) {
   widget.classList.remove("hidden");
   localStorage.setItem("cg_seen_before", "1");
 }
+
 
 
 
