@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CampusGuide AI — Widget</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+
+  <button id="cg-open-btn">
+  <img src="clg_logo.png" alt="CampusGuide logo" />
+</button>
+
+
+<div id="cg-widget" class="hidden" role="dialog" aria-modal="true" aria-label="CampusGuide chat">
+
+  <div class="panel-header">
+    <div class="title-left">
+      <img class="logo" src="clg_logo.png" alt="CampusGuide logo" />
+      <div>
+        <div class="title">THE NEW COLLEGE AI</div>
+        <div class="sub">Ask anything — college or general</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="clear-chat">Clear</button>
+      <button id="cg-close-btn">✕</button>
+    </div>
+  </div>
+
+  <div id="cg-chatbox" class="panel-body">
+
+  </div>
+
+  <div class="panel-footer">
+    <div id="typing-indicator" class="typing hidden">
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="typing-text">CampusGuide is typing</span>
+    </div>
+
+    <div class="input-row">
+      <input id="cg-input" type="text" placeholder="Type your question..." />
+      <button id="cg-send">Send</button>
+    </div>
+  </div>
+
+</div>
+
+
+  <script src="script.js"></script>
+</body>
+</html>
