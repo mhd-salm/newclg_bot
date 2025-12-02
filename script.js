@@ -1,26 +1,17 @@
-const BACKEND_URL = "https://newclg-bot-backend.onrender.com/chat";
-const STORAGE_KEY = "campusguide_chat";
-const SESSION_KEY = "campusguide_session";
 
-// Timetable and day-order data removed per request.
 
-// ---------------------------
-// DOM ELEMENTS
-// -------------------
+const BACKEND_URL = "https://newclg-bot-backend.onrender.com/chat"; 
+const STORAGE_KEY = "campus_ai_college_msgs_v1";
+const SESSION_KEY = "campus_ai_college_session_v1";
 
-const openBtn = document.getElementById("cg-open-btn");
-const widget = document.getElementById("cg-widget");
-const closeBtn = document.getElementById("cg-close-btn");
-const chatbox = document.getElementById("cg-chatbox");
-const sendBtn = document.getElementById("cg-send");
-const inputEl = document.getElementById("cg-input");
-const typingEl = document.getElementById("typing-indicator");
-const clearBtn = document.getElementById("clear-chat");
+// DOM Elements
+const messagesEl = document.getElementById("chat-area");
+const inputEl = document.getElementById("msg");
+const sendBtn = document.getElementById("send");
+const voiceBtn = document.getElementById("voice");
+const suggestionsEl = document.querySelector(".suggestions");
 
-// ---------------------------
-// SESSION / STORAGE
-// ---------------------------
-
+// Create / Restore Session
 let sessionId = localStorage.getItem(SESSION_KEY);
 if (!sessionId) {
   sessionId = "sess_" + Math.random().toString(36).slice(2, 10);
@@ -28,131 +19,189 @@ if (!sessionId) {
 }
 
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-renderMessages();
 
-// ---------------------------
-// EVENT LISTENERS
-// ---------------------------
-
-openBtn.addEventListener("click", () => widget.classList.remove("hidden"));
-closeBtn && closeBtn.addEventListener("click", () => widget.classList.add("hidden"));
-sendBtn.addEventListener("click", onSend);
-inputEl.addEventListener("keydown", e => { if (e.key === "Enter") onSend(); });
-clearBtn && clearBtn.addEventListener("click", clearChat);
-
-// ---------------------------
-// RENDERING
-// ---------------------------
-
-function renderMessages() {
-  chatbox.innerHTML = "";
-  messages.forEach(m => {
-    const el = createMessageEl(m.sender, m.text);
-    chatbox.appendChild(el);
-  });
-  chatbox.scrollTop = chatbox.scrollHeight;
-}
-
-function escapeHtml(str) {
-  return str
+// Utility
+function esc(str) {
+  return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function createMessageEl(sender, text) {
-  const div = document.createElement("div");
-  div.className = "msg " + (sender === "user" ? "user" : "bot");
-  const prefix = sender === "user" ? "You: " : "Bot: ";
-  const safe = escapeHtml(text).replace(/\n/g, "<br>");
-  div.innerHTML = prefix + safe;
-  return div;
-}
-
-function showTyping(on = true) {
-  if (on) typingEl.classList.remove("hidden");
-  else typingEl.classList.add("hidden");
+    .replace(/"/g, "&quot;");
 }
 
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
 }
 
-// Year / timetable helpers removed.
+// Build Message Row
+function makeRow(m) {
+  const row = document.createElement("div");
+  row.className = "row " + (m.sender === "user" ? "user" : "bot");
 
-// ---------------------------
-// MAIN SEND HANDLER
-// ---------------------------
+  const bubble = document.createElement("div");
+  bubble.className = "bubble " + (m.sender === "user" ? "user" : "bot");
+  bubble.innerHTML = esc(m.text).replace(/\n/g, "<br>");
 
-async function onSend() {
-  const text = inputEl.value.trim();
-  if (!text) return;
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  meta.textContent = new Date(m.ts || Date.now()).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  bubble.appendChild(meta);
+
+  row.appendChild(bubble);
+  return row;
+}
+
+function renderAll() {
+  messagesEl.innerHTML = "";
+  messages.forEach((m) => messagesEl.appendChild(makeRow(m)));
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// Typing Indicator
+let typingNode = null;
+function showTyping(on = true) {
+  if (on) {
+    if (!typingNode) {
+      typingNode = document.createElement("div");
+      typingNode.className = "row bot typing";
+      typingNode.innerHTML = `
+        <div class="bubble bot">
+          <div class="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      `;
+      messagesEl.appendChild(typingNode);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+  } else {
+    if (typingNode) typingNode.remove();
+    typingNode = null;
+  }
+}
+
+// Send + Backend POST
+async function sendMessage(text) {
+  if (!text.trim()) return;
+
+  const userMsg = {
+    sender: "user",
+    text: text.trim(),
+    ts: Date.now()
+  };
+
+  messages.push(userMsg);
+  persist();
+  messagesEl.appendChild(makeRow(userMsg));
+  messagesEl.scrollTop = messagesEl.scrollHeight;
   inputEl.value = "";
 
-  messages.push({ sender: "user", text });
-  persist();
-
-  chatbox.appendChild(createMessageEl("user", text));
-  chatbox.scrollTop = chatbox.scrollHeight;
-
+  // Start typing indicator
   showTyping(true);
 
-  const lower = text.toLowerCase();
-
-  // ----------------------------------------------------
-  // NORMAL BACKEND CALL (everything else)
-  // ----------------------------------------------------
   try {
-    const r = await fetch(BACKEND_URL, {
+    const res = await fetch(BACKEND_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text, sessionId })
     });
 
-    const data = await r.json();
-    const reply = data.reply || "⚠ No reply from server.";
+    if (!res.ok) throw new Error("Server error");
 
-    messages.push({ sender: "bot", text: reply });
+    const data = await res.json();
+    const reply = data.reply || data.answer || "⚠️ No reply from server.";
+
+    const botMsg = { sender: "bot", text: reply, ts: Date.now() };
+    messages.push(botMsg);
     persist();
 
     showTyping(false);
-    chatbox.appendChild(createMessageEl("bot", reply));
-    chatbox.scrollTop = chatbox.scrollHeight;
+    messagesEl.appendChild(makeRow(botMsg));
+    messagesEl.scrollTop = messagesEl.scrollHeight;
   } catch (err) {
     showTyping(false);
-    const errText = "❌ Cannot connect to backend.";
-    messages.push({ sender: "bot", text: errText });
+    const errMsg = {
+      sender: "bot",
+      text: "❌ Cannot reach backend. Please check your server or CORS settings.",
+      ts: Date.now()
+    };
+
+    messages.push(errMsg);
     persist();
-    chatbox.appendChild(createMessageEl("bot", errText));
-    chatbox.scrollTop = chatbox.scrollHeight;
+    messagesEl.appendChild(makeRow(errMsg));
+    console.error("Backend error:", err);
   }
 }
 
-// ---------------------------
-// CLEAR CHAT
-// ---------------------------
+// UI Handlers
+sendBtn.addEventListener("click", () => {
+  const v = inputEl.value;
+  if (v) sendMessage(v);
+});
 
-function clearChat() {
+inputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendBtn.click();
+  }
+});
+
+// Suggestions
+if (suggestionsEl) {
+  suggestionsEl.addEventListener("click", (e) => {
+    if (e.target.tagName === "BUTTON") {
+      inputEl.value = e.target.textContent;
+      inputEl.focus();
+    }
+  });
+}
+
+// Speech Recognition (if supported)
+window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (window.SpeechRecognition) {
+  const rec = new SpeechRecognition();
+  rec.lang = "en-IN";
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+
+  voiceBtn.addEventListener("click", () => {
+    try {
+      rec.start();
+      voiceBtn.classList.add("listening");
+    } catch {}
+  });
+
+  rec.addEventListener("result", (e) => {
+    const text = e.results[0][0].transcript;
+    inputEl.value = text;
+    sendMessage(text);
+  });
+
+  rec.addEventListener("end", () => voiceBtn.classList.remove("listening"));
+} else {
+  voiceBtn.style.display = "none";
+}
+
+// Developer Helper
+window.clearCollegeChat = function () {
   messages = [];
   persist();
-  chatbox.innerHTML = "";
+  renderAll();
+};
 
-  sessionId = "sess_" + Math.random().toString(36).slice(2, 10);
-  localStorage.setItem(SESSION_KEY, sessionId);
+// First-Time Greeting
+if (messages.length === 0) {
+  const greet = {
+    sender: "bot",
+    text: "Welcome to Campus AI — Ask about schedules, events, fees, academics, or general questions!",
+    ts: Date.now()
+  };
+  messages.push(greet);
+  persist();
 }
 
-// ---------------------------
-// AUTO-OPEN FIRST TIME
-// ---------------------------
-
-if (!localStorage.getItem("cg_seen_before")) {
-  widget.classList.remove("hidden");
-  localStorage.setItem("cg_seen_before", "1");
-}
-
-
-
-
-
+// Render on load
+renderAll();
