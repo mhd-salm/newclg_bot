@@ -1,5 +1,5 @@
 /* =============================
-   COLLEGE-THEMED MODERN UI (D)
+   COLLEGE-THEMED MODERN UI
    style.css — Dark + Blue/Green
    ============================= */
 :root {
@@ -17,9 +17,9 @@
 html, body {
   margin: 0;
   height: 100%;
+  min-height: 100%;
   font-family: Inter, system-ui, sans-serif;
 
-  /* NEW BACKGROUND IMAGE + GRADIENT */
   background:
     linear-gradient(160deg, #0d1b2aee, #0b1623ee 60%, #07111dee),
     url("bg.jpg");
@@ -31,8 +31,11 @@ html, body {
   display: flex;
   justify-content: center;
   align-items: center;
+
+  -webkit-text-size-adjust: 100%;
 }
 
+/* MAIN LAYOUT */
 .ai-app {
   width: 92%;
   max-width: 900px;
@@ -67,13 +70,31 @@ html, body {
   margin: 0;
   font-size: 21px;
   font-weight: 600;
-  color: white;
 }
 
 .app-header p {
   margin: 0;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--muted);
+}
+
+/* CLEAR BUTTON */
+.clear-btn {
+  margin-left: auto;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 14px;
+}
+
+.clear-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: var(--accent2);
 }
 
 /* ---------- CHAT AREA ---------- */
@@ -108,6 +129,11 @@ html, body {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(12px);
   border: 1px solid var(--panel-border);
+
+  /* MOBILE FIX: prevent overflow */
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 .bubble.user {
@@ -145,28 +171,6 @@ html, body {
 @keyframes pulse {
   0%, 100% { transform: translateY(0); opacity: 0.5; }
   50% { transform: translateY(-6px); opacity: 1; }
-}
-
-/* ---------- SUGGESTIONS ---------- */
-.suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.suggestions button {
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--panel-border);
-  cursor: pointer;
-  color: var(--text);
-  transition: 0.2s;
-}
-
-.suggestions button:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: var(--accent2);
 }
 
 /* ---------- FOOTER ---------- */
@@ -209,8 +213,14 @@ html, body {
   font-size: 15px;
 }
 
-/* ---------- MOBILE ---------- */
+/* ---------- TOUCH OPTIMIZATION ---------- */
+button, input {
+  touch-action: manipulation;
+}
+
+/* ---------- IMPROVED MOBILE MODE ---------- */
 @media (max-width: 720px) {
+
   .ai-app {
     width: 100%;
     height: 100vh;
@@ -227,6 +237,11 @@ html, body {
   }
 
   .app-header p {
+    font-size: 12px;
+  }
+
+  .clear-btn {
+    padding: 6px 10px;
     font-size: 12px;
   }
 
@@ -247,23 +262,4 @@ html, body {
   .send-btn {
     padding: 12px;
   }
-}
-
-
-.clear-btn {
-  margin-left: auto;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--text);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius);
-  backdrop-filter: blur(10px);
-  cursor: pointer;
-  transition: 0.2s;
-  font-size: 14px;
-}
-
-.clear-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: var(--accent2);
 }
