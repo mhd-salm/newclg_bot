@@ -18,7 +18,15 @@ html, body {
   margin: 0;
   height: 100%;
   font-family: Inter, system-ui, sans-serif;
-  background: var(--bg);
+
+  /* NEW BACKGROUND IMAGE + GRADIENT */
+  background:
+    linear-gradient(160deg, #0d1b2aee, #0b1623ee 60%, #07111dee),
+    url("bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+
   color: var(--text);
   display: flex;
   justify-content: center;
@@ -40,11 +48,15 @@ html, body {
   gap: 14px;
   align-items: center;
   padding: 14px;
+  padding-left:20px;
   background: var(--panel);
   border-radius: var(--radius);
   backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
   box-shadow: var(--shadow);
+}
+.clear{
+  padding-left:260px;
 }
 
 .app-logo {
@@ -204,5 +216,5 @@ html, body {
 /* ---------- MOBILE ---------- */
 @media (max-width: 720px) {
   .ai-app { height: 94vh; }
-  .chat-area { height: 70vh; }
+  .chat-area { height: 70vh }
 }
