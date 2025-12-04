@@ -1,6 +1,6 @@
 
 
-const BACKEND_URL = "http://127.0.0.1:4000/chat"; 
+const BACKEND_URL = "https://newclg-bot-backend.onrender.com/chat"; 
 const STORAGE_KEY = "campus_ai_college_msgs_v1";
 const SESSION_KEY = "campus_ai_college_session_v1";
 
@@ -215,3 +215,4 @@ if (messages.length === 0) {
 
 // Render on load
 renderAll();
+
