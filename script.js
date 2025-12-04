@@ -215,4 +215,3 @@ if (messages.length === 0) {
 
 // Render on load
 renderAll();
-
