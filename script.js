@@ -1,6 +1,6 @@
 
 
-const BACKEND_URL = "https://newclg-bot-backend.onrender.com/chat"; 
+const BACKEND_URL = "http://127.0.0.1:4000/chat"; 
 const STORAGE_KEY = "campus_ai_college_msgs_v1";
 const SESSION_KEY = "campus_ai_college_session_v1";
 
@@ -10,6 +10,7 @@ const inputEl = document.getElementById("msg");
 const sendBtn = document.getElementById("send");
 const voiceBtn = document.getElementById("voice");
 const suggestionsEl = document.querySelector(".suggestions");
+const clearBtn = document.getElementById("clear-chat");
 
 // Create / Restore Session
 let sessionId = localStorage.getItem(SESSION_KEY);
@@ -148,6 +149,15 @@ inputEl.addEventListener("keydown", (e) => {
     sendBtn.click();
   }
 });
+clearBtn.addEventListener("click", () => {
+  messages = [];
+  persist();
+  messagesEl.innerHTML = "";
+
+  sessionId = "sess_" + Math.random().toString(36).slice(2, 10);
+  localStorage.setItem(SESSION_KEY, sessionId);
+});
+
 
 // Suggestions
 if (suggestionsEl) {
