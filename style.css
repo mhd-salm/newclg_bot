@@ -1,6 +1,5 @@
 /* =============================
-   CAMPUS AI - RESPONSIVE UI
-   Clean + Mobile-fixed CSS
+   
    ============================= */
 :root {
   --panel: rgba(17, 29, 48, 0.55);
@@ -257,3 +256,4 @@ button, input {
     padding: 12px;
   }
 }
+
