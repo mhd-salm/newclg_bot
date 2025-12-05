@@ -123,6 +123,8 @@ html, body {
   gap: 14px;
 
   box-sizing: border-box;
+  min-height: calc(100vh - 180px);   /* FIX HERE */
+
 }
 
 /* ---------- MESSAGES ---------- */
@@ -281,3 +283,4 @@ button, input {
     padding: 12px;
   }
 }
+
