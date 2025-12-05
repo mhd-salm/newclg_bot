@@ -42,13 +42,18 @@ html, body {
   margin: 10px auto;
   padding: 0 8px;
 
-  height: auto;
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
 
   display: flex;
   flex-direction: column;
   gap: 16px;
   box-sizing: border-box;
+  
+}
+.ai-app {
+    min-height: 100dvh;   /* NEW: fills true visible height */
+    height: 100dvh;       /* Forces full height on startup */
 }
 
 /* ---------- HEADER ---------- */
@@ -244,6 +249,7 @@ button, input {
     height: auto;
     min-height: 100vh;
   }
+  
 
   .app-header {
     padding: 10px;
