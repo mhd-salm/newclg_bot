@@ -103,15 +103,12 @@ html, body {
 }
 
 /* ---------- CHAT AREA ---------- */
-.chat-area {
-  min-height: 60vh;
-
+ .chat-area {
   flex: 1;
   padding: 18px;
   width: 100%;
 
   overflow-y: auto;
-  overflow-x: hidden;
 
   background: var(--panel);
   border-radius: var(--radius);
@@ -124,8 +121,9 @@ html, body {
   gap: 14px;
   box-sizing: border-box;
 
-  /* ⭐ FIX: Always fill screen even if empty */
-  min-height: calc(100dvh - 180px);
+  /* FIX */
+  min-height: calc(100vh - 180px);
+  height: calc(100vh - 180px);
 }
 
 /* ---------- MESSAGES ---------- */
@@ -282,3 +280,4 @@ button, input {
     padding: 12px;
   }
 }
+
