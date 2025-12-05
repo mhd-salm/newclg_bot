@@ -22,7 +22,6 @@ html, body {
   width: 100%;
   font-family: Inter, system-ui, sans-serif;
 
-  /* Background */
   background:
     linear-gradient(160deg, #0d1b2aee, #0b1623ee 60%, #07111dee),
     url("bg.jpg");
@@ -30,12 +29,10 @@ html, body {
   background-position: center;
 
   color: var(--text);
-
-  display: block;
 }
 
 /* ---------- MAIN APP ---------- */
-/* FIXED: 100vh removed (breaks WebView) */
+/* FULL FIX: 100dvh ensures correct height on all phones */
 .ai-app {
   width: 100%;
   max-width: 900px;
@@ -49,11 +46,6 @@ html, body {
   flex-direction: column;
   gap: 16px;
   box-sizing: border-box;
-  
-}
-.ai-app {
-    min-height: 100dvh;   /* NEW: fills true visible height */
-    height: 100dvh;       /* Forces full height on startup */
 }
 
 /* ---------- HEADER ---------- */
@@ -126,10 +118,10 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 14px;
-
   box-sizing: border-box;
-  min-height: calc(100vh - 180px);   /* FIX HERE */
 
+  /* ⭐ FIX: Always fill screen even if empty */
+  min-height: calc(100dvh - 180px);
 }
 
 /* ---------- MESSAGES ---------- */
@@ -246,10 +238,7 @@ button, input {
     width: 100%;
     padding: 0 6px;
     margin: 0;
-    height: auto;
-    min-height: 100vh;
   }
-  
 
   .app-header {
     padding: 10px;
@@ -268,11 +257,9 @@ button, input {
   .clear-btn {
     padding: 6px 10px;
     font-size: 12px;
-
-    /* ⬇️ Fix: push clear button fully right */
     margin-left: auto;
     margin-right: 0;
-    transform: translateX(4px);
+    transform: translateX(4px); /* Push to right */
   }
 
   .chat-area {
@@ -289,4 +276,3 @@ button, input {
     padding: 12px;
   }
 }
-
