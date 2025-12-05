@@ -1,6 +1,8 @@
 /* =============================
-   
+   CAMPUS AI - RESPONSIVE UI
+   Fully WebView-safe Version
    ============================= */
+
 :root {
   --panel: rgba(17, 29, 48, 0.55);
   --panel-border: rgba(255, 255, 255, 0.06);
@@ -17,31 +19,36 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  min-height: 100%;
+  width: 100%;
   font-family: Inter, system-ui, sans-serif;
 
+  /* Background */
   background:
     linear-gradient(160deg, #0d1b2aee, #0b1623ee 60%, #07111dee),
     url("bg.jpg");
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
 
   color: var(--text);
 
-  /* FIXED: remove vertical centering */
   display: block;
 }
 
 /* ---------- MAIN APP ---------- */
+/* FIXED: 100vh removed (breaks WebView) */
 .ai-app {
-  width: 92%;
+  width: 100%;
   max-width: 900px;
-  margin: 10px auto;       /* FIXED: positions app top-left on mobile */
-  height: calc(100vh - 20px);
+  margin: 10px auto;
+  padding: 0 8px;
+
+  height: auto;
+  min-height: 100vh;
+
   display: flex;
   flex-direction: column;
   gap: 16px;
+  box-sizing: border-box;
 }
 
 /* ---------- HEADER ---------- */
@@ -55,6 +62,7 @@ html, body {
   backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
   box-shadow: var(--shadow);
+  width: 100%;
 }
 
 .app-logo {
@@ -67,7 +75,7 @@ html, body {
 
 .app-header h1 {
   margin: 0;
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 600;
 }
 
@@ -99,21 +107,29 @@ html, body {
 .chat-area {
   flex: 1;
   padding: 18px;
+  width: 100%;
+
   overflow-y: auto;
+  overflow-x: hidden;
+
   background: var(--panel);
   border-radius: var(--radius);
   backdrop-filter: blur(20px);
   border: 1px solid var(--panel-border);
   box-shadow: var(--shadow);
+
   display: flex;
   flex-direction: column;
   gap: 14px;
+
+  box-sizing: border-box;
 }
 
 /* ---------- MESSAGES ---------- */
 .row {
   display: flex;
-  max-width: 80%;
+  max-width: 85%;
+  word-wrap: break-word;
 }
 
 .row.user { align-self: flex-end; }
@@ -127,10 +143,8 @@ html, body {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(12px);
   border: 1px solid var(--panel-border);
-
-  word-wrap: break-word;
-  word-break: break-word;
   max-width: 100%;
+  word-break: break-word;
 }
 
 .bubble.user {
@@ -172,9 +186,11 @@ html, body {
 
 /* ---------- FOOTER ---------- */
 .app-footer {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
+  box-sizing: border-box;
 }
 
 #msg {
@@ -186,6 +202,7 @@ html, body {
   color: white;
   outline: none;
   font-size: 15px;
+  box-sizing: border-box;
 }
 
 .icon-btn,
@@ -220,14 +237,16 @@ button, input {
 
   .ai-app {
     width: 100%;
-    height: calc(100vh - 10px);
-    margin: 5px;
-    padding: 0;
+    padding: 0 6px;
+    margin: 0;
+    height: auto;
+    min-height: 100vh;
   }
 
   .app-header {
     padding: 10px;
     gap: 10px;
+    width: 100%;
   }
 
   .app-header h1 {
@@ -245,6 +264,7 @@ button, input {
 
   .chat-area {
     padding: 12px;
+    width: 100%;
   }
 
   #msg {
@@ -256,4 +276,3 @@ button, input {
     padding: 12px;
   }
 }
-
