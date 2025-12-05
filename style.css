@@ -27,7 +27,8 @@ html, body {
     url("bg.jpg");
   background-size: cover;
   background-position: center;
-
+    background-position: center;
+  background-attachment: scroll;
   color: var(--text);
 }
 
@@ -39,8 +40,9 @@ html, body {
   margin: 10px auto;
   padding: 0 8px;
 
-  height: 100dvh;
-  min-height: 100dvh;
+  min-height: 100vh;
+  height: auto;
+
 
   display: flex;
   flex-direction: column;
@@ -102,6 +104,8 @@ html, body {
 
 /* ---------- CHAT AREA ---------- */
 .chat-area {
+  min-height: 60vh;
+
   flex: 1;
   padding: 18px;
   width: 100%;
@@ -263,6 +267,8 @@ button, input {
   }
 
   .chat-area {
+    min-height: 60vh;
+
     padding: 12px;
     width: 100%;
   }
