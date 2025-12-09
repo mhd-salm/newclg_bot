@@ -1,5 +1,3 @@
-
-
 const BACKEND_URL = "https://newclg-bot-backend.onrender.com/chat"; 
 const STORAGE_KEY = "campus_ai_college_msgs_v1";
 const SESSION_KEY = "campus_ai_college_session_v1";
@@ -113,7 +111,7 @@ async function sendMessage(text) {
     if (!res.ok) throw new Error("Server error");
 
     const data = await res.json();
-    const reply = data.reply || data.answer || "⚠️ No reply from server.";
+    const reply = data.reply || data.answer || "⚠ No reply from server.";
 
     const botMsg = { sender: "bot", text: reply, ts: Date.now() };
     messages.push(botMsg);
