@@ -132,7 +132,7 @@ async function sendMessage(text) {
     showTyping(false);
     const errMsg = {
       sender: "bot",
-      text: "❌ Cannot reach backend. Please check your server or CORS settings.",
+      text: "🎓 Campus AI is currently getting an update. Please try again in a few moments!",
       ts: Date.now()
     };
 
@@ -221,3 +221,4 @@ if (messages.length === 0) {
 
 // Render on load
 renderAll();
+
