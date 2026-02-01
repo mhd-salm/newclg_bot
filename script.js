@@ -1,4 +1,12 @@
-const BACKEND_URL = "https://newclg-bot-backend.onrender.com/chat"; 
+window.addEventListener("load", () => {
+  const loader = document.getElementById("loading-screen");
+  // Small delay so users can admire your animation
+  setTimeout(() => {
+    loader.classList.add("hidden-loader");
+  }, 1500); // 1.5 seconds
+});
+
+const BACKEND_URL = "https://newclg-bot-backend.onrender.com/chat";  
 const STORAGE_KEY = "campus_ai_college_msgs_v1";
 const SESSION_KEY = "campus_ai_college_session_v1";
 
@@ -170,7 +178,7 @@ if (suggestionsEl) {
 // Speech Recognition (if supported)
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (window.SpeechRecognition) {
-  const rec = new SpeechRecognition();
+  const rec = new window.SpeechRecognition();
   rec.lang = "en-IN";
   rec.interimResults = false;
   rec.maxAlternatives = 1;
