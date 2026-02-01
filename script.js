@@ -18,6 +18,8 @@ const voiceBtn = document.getElementById("voice");
 const suggestionsEl = document.querySelector(".suggestions");
 const clearBtn = document.getElementById("clear-chat");
 
+let lastFailedMessage = null;
+
 // Create / Restore Session
 let sessionId = localStorage.getItem(SESSION_KEY);
 if (!sessionId) {
@@ -129,18 +131,32 @@ async function sendMessage(text) {
     messagesEl.appendChild(makeRow(botMsg));
     messagesEl.scrollTop = messagesEl.scrollHeight;
   } catch (err) {
-    showTyping(false);
-    const errMsg = {
-      sender: "bot",
-      text: "🎓 Campus AI is currently getting an update. Please try again in a few moments!",
-      ts: Date.now()
-    };
+  showTyping(false);
 
-    messages.push(errMsg);
-    persist();
-    messagesEl.appendChild(makeRow(errMsg));
-    console.error("Backend error:", err);
-  }
+  const errRow = document.createElement("div");
+  errRow.className = "row bot";
+
+  errRow.innerHTML = `
+    <div class="bubble bot">
+      🎓 Campus AI is currently getting an update. Please try again in a few moments!
+.<br><br>
+      <button class="retry-btn"> Retry</button>
+    </div>
+  `;
+
+  messagesEl.appendChild(errRow);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  errRow.querySelector(".retry-btn").addEventListener("click", () => {
+    if (lastFailedMessage) {
+      sendMessage(lastFailedMessage);
+    }
+  });
+
+  console.error("Backend error:", err);
+}
+
+   lastFailedMessage = text;
 }
 
 // UI Handlers
@@ -221,4 +237,7 @@ if (messages.length === 0) {
 
 // Render on load
 renderAll();
+// Render on load
+renderAll();
+
 
