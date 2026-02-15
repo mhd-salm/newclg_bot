@@ -1,19 +1,14 @@
-/* =============================
-   CAMPUS AI - THEME: PRO MONOCHROME GLASS
-   High-end glass effect on a sophisticated grayish-black background.
-   ============================= */
-:root {
-  /* --- New Background Palette (Grayish Black) --- */
-  --bg-main: #121212; /* Near pure black */
-  --bg-secondary: #1e1e24; /* A subtle rich charcoal gray */
 
-  /* Refined Glass Surfaces */
-  /* Kept slightly cool-tinted for contrast against the warm gray background */
+:root {
+
+  --bg-main: #121212; 
+  --bg-secondary: #1e1e24;
+
+  
   --glass-surface: rgba(35, 35, 45, 0.5);
   --glass-blur: blur(20px);
 
-  /* Advanced Lighting Borders - Key for depth */
-  /* A faint white light on top edge, faint dark shadow on bottom */
+
   --glass-edge-highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
   --glass-edge-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
   --border-faint: 1px solid rgba(255, 255, 255, 0.05);
@@ -564,4 +559,5 @@ html, body {
 .retry-btn:hover {
   background: #1d4ed8;
 }
+
 
