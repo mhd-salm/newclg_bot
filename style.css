@@ -587,3 +587,134 @@ img { display: block; }
   .wlc-heading { font-size: 18px; }
   .chip { font-size: 12px; padding: 7px 11px; }
 }
+
+
+/* ══════════════════════════════════════════════════════════
+   MARKDOWN REPLY RENDERING
+   These rules apply ONLY inside .md-bubble (bot messages).
+   Nothing else on the page is affected.
+══════════════════════════════════════════════════════════ */
+
+/* ── Bubble override: give it breathing room ── */
+.msg-wrap.bot .bubble.md-bubble {
+  padding: 4px 2px;          /* tighter outer pad; inner elements add their own */
+  line-height: 1;            /* reset; children control their own line-height */
+}
+
+/* ── Paragraphs ── */
+.md-bubble .md-para {
+  margin: 0 0 10px;
+  line-height: 1.72;
+  font-size: 14.5px;
+  color: var(--tx);
+}
+
+.md-bubble .md-para:last-child { margin-bottom: 0; }
+
+/* ── Headings ── */
+.md-bubble .md-heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tx);
+  margin: 14px 0 6px;
+  line-height: 1.35;
+  letter-spacing: -.15px;
+}
+
+.md-bubble .md-heading:first-child { margin-top: 2px; }
+
+/* ── Lists (shared) ── */
+.md-bubble .md-list {
+  margin: 4px 0 12px;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.md-bubble .md-list:last-child { margin-bottom: 0; }
+
+/* Bullet list items — custom dot */
+.md-bubble .md-list:not(.md-list-ol) > li {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--tx);
+}
+
+.md-bubble .md-list:not(.md-list-ol) > li::before {
+  content: '';
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ac);
+  margin-top: 7px;          /* aligns dot to first text line */
+}
+
+/* Numbered list items */
+.md-bubble .md-list-ol {
+  counter-reset: ol-counter;
+  padding-left: 0;
+}
+
+.md-bubble .md-list-ol > li {
+  counter-increment: ol-counter;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--tx);
+}
+
+.md-bubble .md-list-ol > li::before {
+  content: counter(ol-counter) '.';
+  flex-shrink: 0;
+  min-width: 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ac);
+  text-align: right;
+}
+
+/* ── Inline bold / italic ── */
+.md-bubble strong {
+  font-weight: 700;
+  color: var(--tx);
+}
+
+.md-bubble em {
+  font-style: italic;
+  color: var(--tx-2);
+}
+
+/* ── Inline code ── */
+.md-bubble .md-code {
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 13px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(255,255,255,.08);
+  color: #a8ddb5;
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+[data-theme="light"] .md-bubble .md-code {
+  background: rgba(0,0,0,.05);
+  color: #2d6a4f;
+  border-color: rgba(0,0,0,.07);
+}
+
+/* ── Smooth fade-in for new bot bubbles ── */
+.msg-wrap.bot .bubble.md-bubble {
+  animation: mdFadeIn .3s ease both;
+}
+
+@keyframes mdFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
