@@ -1,75 +1,197 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Campus AI Chat</title>
-<link rel="stylesheet" href="style.css" />
-<link rel="icon" href="clg_logo.png" type="image/png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" id="theme-color-meta" content="#212121" />
+  <title>Campus AI — The New College</title>
+  <link rel="icon" href="clg_logo.png" type="image/png" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div id="loading-screen">
-  <div class="loader-wrapper">
-    <div class="loader"></div>
-    <span class="loader-letter">C</span>
-    <span class="loader-letter">A</span>
-    <span class="loader-letter">M</span>
-    <span class="loader-letter">P</span>
-    <span class="loader-letter">U</span>
-    <span class="loader-letter">S</span>
-    <span class="loader-letter">&nbsp;</span>
-    <span class="loader-letter">A</span>
-    <span class="loader-letter">I</span>
-  </div>
-</div>
-<div class="ai-app">
-  <header class="app-header">
-    <img src="clg_logo.png" class="app-logo" />
-    <div class="name">
-      <h1>The New College</h1>
-      <p>Smart Assistant</p>
-    </div>
-    <button id="clear-chat" class="icon-btn">clear</button>
-  </header>
-  <main id="chat-area" class="chat-area"></main>
-  <footer class="app-footer">
-    <div id="poda">
-      <div class="glow"></div>
-      <div class="darkBorderBg"></div>
-      <div class="darkBorderBg"></div>
-      <div class="darkBorderBg"></div>
-      <div class="white"></div>
-      <div class="border"></div>
-      <div class="fancy-input-wrapper">
-        <div id="search-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: #9ca3af;">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-        </div>
-        <input id="msg" type="text" placeholder="Ask anything..." class="input" autocomplete="off" />
+
+  <!-- ════════════════════════════════
+       SPLASH SCREEN
+  ════════════════════════════════ -->
+  <div id="splash" aria-hidden="true">
+    <div class="splash-body">
+      <div class="splash-logo-wrap">
+        <img src="clg_logo.png" alt="" class="splash-logo"
+             onerror="this.style.display='none'" />
+        <div class="splash-ring"></div>
       </div>
+      <p class="splash-title">Campus AI</p>
+      <p class="splash-sub">The New College, Chennai</p>
     </div>
-    <div class="mic">
-        <button id="voice" class="icon-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-            <line x1="12" y1="19" x2="12" y2="23"></line>
-            <line x1="8" y1="23" x2="16" y2="23"></line>
+  </div>
+
+  <!-- ════════════════════════════════
+       APP SHELL
+  ════════════════════════════════ -->
+  <div class="app" id="app">
+
+    <!-- ── HEADER ── -->
+    <header class="header" id="header">
+
+      <!-- Left: brand -->
+      <div class="header-brand">
+        <img src="clg_logo.png" alt="" class="header-logo"
+             onerror="this.style.display='none'" />
+        <div class="header-brand-text">
+          <span class="header-title">Campus AI</span>
+          <span class="header-sub">The New College</span>
+        </div>
+      </div>
+
+      <!-- Right: action buttons -->
+      <div class="header-actions">
+
+        <!-- New-chat pencil button -->
+        <button class="hdr-btn" id="new-chat-btn"
+                aria-label="New chat" title="New chat">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
           </svg>
         </button>
-    </div>
-    <button id="send" class="send-btn">
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-    </button>
-  </footer>
-</div>
-<script src ="script.js"></script>
+
+        <!-- Hamburger -->
+        <button class="hdr-btn hdr-menu-btn" id="menu-btn"
+                aria-label="Menu" aria-expanded="false"
+                aria-controls="dropdown">
+          <span class="hbg"></span>
+          <span class="hbg"></span>
+          <span class="hbg"></span>
+        </button>
+
+      </div><!-- /header-actions -->
+
+      <!-- Dropdown panel -->
+      <div class="dropdown" id="dropdown"
+           role="menu" aria-hidden="true">
+
+        <!-- Light-mode row -->
+        <div class="dd-row">
+          <div class="dd-row-left">
+            <!-- sun icon -->
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1"  x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22"  y1="4.22"  x2="5.64"  y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1"  y1="12" x2="3"  y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22"  y1="19.78" x2="5.64"  y2="18.36"/>
+              <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"/>
+            </svg>
+            <span>Light mode</span>
+          </div>
+          <label class="toggle" aria-label="Toggle light mode">
+            <input type="checkbox" id="theme-chk" />
+            <span class="toggle-track">
+              <span class="toggle-thumb"></span>
+            </span>
+          </label>
+        </div>
+
+        <div class="dd-sep"></div>
+
+        <!-- Clear chat -->
+        <button class="dd-btn" id="clear-btn" role="menuitem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"/>
+            <path d="M3.51 15a9 9 0 1 0 .49-4.36"/>
+          </svg>
+          <span>Clear chat</span>
+        </button>
+
+      </div><!-- /dropdown -->
+
+    </header><!-- /header -->
+
+    <!-- ── CHAT ── -->
+    <main class="chat" id="chat">
+
+      <!-- Welcome / empty state -->
+      <div class="welcome" id="welcome">
+        <div class="wlc-icon">
+          <img src="clg_logo.png" alt=""
+               onerror="this.style.display='none'" />
+        </div>
+        <h2 class="wlc-heading">How can I help you?</h2>
+        <p class="wlc-body">
+          Ask me anything about The New College — timetables,
+          fees, departments, contacts &amp; more.
+        </p>
+        <div class="chips">
+          <button class="chip" data-q="What is today's timetable?">📅 Today's timetable</button>
+          <button class="chip" data-q="What is the fee structure?">💰 Fee structure</button>
+          <button class="chip" data-q="Tell me about The New College, Chennai">🏛 About the college</button>
+          <button class="chip" data-q="What are the contact details?">📞 Contact info</button>
+          <button class="chip" data-q="What departments are offered?">🎓 Departments</button>
+          <button class="chip" data-q="Who developed this chatbot?">👨‍💻 Developers</button>
+        </div>
+      </div>
+
+    </main><!-- /chat -->
+
+    <!-- ── INPUT BAR ── -->
+    <footer class="footer" id="footer">
+      <div class="input-shell">
+
+        <!-- Mic -->
+        <button class="inp-btn mic-btn" id="mic-btn"
+                aria-label="Voice input" title="Voice input">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8"  y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+
+        <!-- Textarea -->
+        <textarea id="msg"
+                  placeholder="Message Campus AI…"
+                  rows="1"
+                  autocomplete="off"
+                  spellcheck="false"
+                  aria-label="Chat message"></textarea>
+
+        <!-- Send -->
+        <button class="inp-btn send-btn" id="send-btn"
+                aria-label="Send message" title="Send message"
+                disabled>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"/>
+            <polyline points="5 12 12 5 19 12"/>
+          </svg>
+        </button>
+
+      </div>
+      <p class="footer-note">
+        Campus AI may make mistakes — verify important info with the college office.
+      </p>
+    </footer>
+
+  </div><!-- /app -->
+
+  <!-- Invisible click-away layer for dropdown -->
+  <div class="click-away" id="click-away"></div>
+
+  <script src="script.js"></script>
 </body>
 </html>
-
-
