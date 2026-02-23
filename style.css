@@ -186,7 +186,7 @@ img { display: block; }
 }
 
 /* Brand */
-.header-brand { display: flex; align-items: center; gap: 10px; margin: 0 auto; }
+.header-brand { display: flex; align-items: center; gap: 10px;  margin: 0 auto;}
 .header-logo  {
   width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0;
 }
@@ -718,4 +718,3 @@ img { display: block; }
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0);   }
 }
-
