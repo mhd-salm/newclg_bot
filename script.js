@@ -1,3 +1,7 @@
+/* ════════════════════════════════════════════════════════════
+   CAMPUS AI — script.js
+   Pure JavaScript, no frameworks
+════════════════════════════════════════════════════════════ */
 
 'use strict';
 
@@ -126,6 +130,74 @@ function esc(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ──────────────────────────────────────
+   § 7b  MARKDOWN → HTML  (bot replies only)
+   Handles: **bold**, *italic*, `code`,
+   bullet lists (* / - / •), numbered lists,
+   ### headings, blank-line paragraphs.
+   XSS-safe: raw text is escaped first.
+────────────────────────────────────── */
+function parseMd(raw) {
+  // 1. Escape HTML entities in the raw string so user-supplied
+  //    text can never inject markup.
+  let s = esc(raw);
+
+  // 2. Normalise line endings
+  s = s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // 3. Split into logical blocks separated by blank lines
+  //    Each block is processed independently.
+  const blocks = s.split(/\n{2,}/);
+
+  const rendered = blocks.map(block => {
+    const lines = block.split('\n').map(l => l.trimEnd());
+
+    // ── Heading  (### text  /  ## text  /  # text) ──
+    if (/^#{1,3}\s/.test(lines[0])) {
+      return lines.map(line => {
+        return line.replace(/^(#{1,3})\s+(.+)$/, (_, hashes, text) => {
+          const level = Math.min(hashes.length + 2, 5); // h3-h5 range
+          return `<h${level} class="md-heading">${inlineFormat(text)}</h${level}>`;
+        });
+      }).join('\n');
+    }
+
+    // ── Bullet list  (* / - / • at line start) ──
+    if (/^[\*\-•]\s+/.test(lines[0])) {
+      const items = lines
+        .filter(l => /^[\*\-•]\s+/.test(l))
+        .map(l => `<li>${inlineFormat(l.replace(/^[\*\-•]\s+/, ''))}</li>`);
+      return `<ul class="md-list">${items.join('')}</ul>`;
+    }
+
+    // ── Numbered list  (1. / 1) at line start) ──
+    if (/^\d+[.)]\s+/.test(lines[0])) {
+      const items = lines
+        .filter(l => /^\d+[.)]\s+/.test(l))
+        .map(l => `<li>${inlineFormat(l.replace(/^\d+[.)]\s+/, ''))}</li>`);
+      return `<ol class="md-list md-list-ol">${items.join('')}</ol>`;
+    }
+
+    // ── Default: paragraph ──
+    const joined = lines.join('<br>');
+    return `<p class="md-para">${inlineFormat(joined)}</p>`;
+  });
+
+  return rendered.join('');
+}
+
+// Inline formatting applied inside any block
+function inlineFormat(s) {
+  return s
+    // **bold**
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // *italic* or _italic_  (only when surrounded by non-space)
+    .replace(/(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)/g, '<em>$1</em>')
+    .replace(/_(?!\s)(.+?)(?<!\s)_/g, '<em>$1</em>')
+    // `inline code`
+    .replace(/`([^`]+)`/g, '<code class="md-code">$1</code>');
 }
 
 
