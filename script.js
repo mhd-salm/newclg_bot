@@ -3,8 +3,7 @@
    Pure JavaScript, no frameworks
 ════════════════════════════════════════════════════════════ */
 
-'use strict';
-
+console.log("Script running");  
 /* ──────────────────────────────────────
    § 1  CONFIG
 ────────────────────────────────────── */
@@ -240,7 +239,7 @@ function buildRow(msg) {
       <div class="bot-row">
         <div class="bot-av">
           <img src="clg_logo.png" alt=""
-               onerror="this.parentElement.innerHTML='${BOT_ICON}
+               onerror="this.parentElement.innerHTML='${BOT_ICON}'"
         </div>
         <div class="bubble">${esc(msg.text).replace(/\n/g,'<br>')}</div>
       </div>
@@ -291,7 +290,7 @@ function showTyping() {
     <div class="typing-wrap">
       <div class="bot-av">
         <img src="clg_logo.png" alt=""
-             onerror="this.parentElement.innerHTML='${BOT_ICON}
+             onerror="this.parentElement.innerHTML='${BOT_ICON}'"
       </div>
       <div class="typing-dots">
         <span class="td"></span><span class="td"></span><span class="td"></span>
@@ -336,11 +335,20 @@ async function sendMessage(text) {
   try {
     const res = await fetch(BACKEND_URL, {
       method : 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + localStorage.getItem("access_token")},
       body   : JSON.stringify({ message: text, sessionId })
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (res.status === 401) {
+  alert("Session expired. Please login again.");
+  localStorage.removeItem("access_token");
+  window.location.href = "login.html";
+  return;
+}
+
+if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data  = await res.json();
     const reply = (data.reply || data.answer || '⚠️ No reply received.').trim();
@@ -364,7 +372,7 @@ async function sendMessage(text) {
       <div class="bot-row">
         <div class="bot-av">
           <img src="clg_logo.png" alt=""
-               onerror="this.parentElement.innerHTML='${BOT_ICON}
+               onerror="this.parentElement.innerHTML='${BOT_ICON}'"
         </div>
         <div class="bubble err-bubble">
           <p class="err-text">⚠️ Couldn't reach Campus AI. Check your connection.</p>
@@ -420,7 +428,10 @@ sendBtn.addEventListener('click', () => {
   if (!sendBtn.disabled) sendMessage(msgInput.value);
 });
 
-
+document.getElementById("logout-btn").addEventListener("click", () => {
+  localStorage.removeItem("access_token");
+  window.location.href = "login.html";
+});
 /* ──────────────────────────────────────
    § 14  CLEAR / NEW CHAT
 ────────────────────────────────────── */
