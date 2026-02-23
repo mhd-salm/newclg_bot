@@ -1,243 +1,429 @@
-window.addEventListener("load", () => {
-  const loader = document.getElementById("loading-screen");
-  // Small delay so users can admire your animation
-  setTimeout(() => {
-    loader.classList.add("hidden-loader");
-  }, 1500); // 1.5 seconds
+
+'use strict';
+
+/* ──────────────────────────────────────
+   § 1  CONFIG
+────────────────────────────────────── */
+const BACKEND_URL  = 'https://newclg-bot-backend.onrender.com/chat';
+const KEY_MSGS     = 'campus_ai_msgs_v5';
+const KEY_SESS     = 'campus_ai_sess_v5';
+const KEY_THEME    = 'campus_ai_theme_v5';
+const MAX_MSGS     = 100;            // messages kept in localStorage
+
+
+/* ──────────────────────────────────────
+   § 2  DOM REFERENCES
+────────────────────────────────────── */
+const $id = id => document.getElementById(id);
+
+const splash    = $id('splash');
+const chat      = $id('chat');         // <main>
+const welcome   = $id('welcome');
+const msgInput  = $id('msg');
+const sendBtn   = $id('send-btn');
+const micBtn    = $id('mic-btn');
+const menuBtn   = $id('menu-btn');
+const dropdown  = $id('dropdown');
+const clickAway = $id('click-away');
+const clearBtn  = $id('clear-btn');
+const newChatBtn= $id('new-chat-btn');
+const themeChk  = $id('theme-chk');
+const themeMeta = $id('theme-color-meta');
+
+
+/* ──────────────────────────────────────
+   § 3  SPLASH  — fade out after load
+────────────────────────────────────── */
+window.addEventListener('load', () => {
+  setTimeout(() => splash.classList.add('gone'), 1200);
 });
 
-const BACKEND_URL = "https://newclg-bot-backend.onrender.com/chat";  
-const STORAGE_KEY = "campus_ai_college_msgs_v1";
-const SESSION_KEY = "campus_ai_college_session_v1";
 
-// DOM Elements
-const messagesEl = document.getElementById("chat-area");
-const inputEl = document.getElementById("msg");
-const sendBtn = document.getElementById("send");
-const voiceBtn = document.getElementById("voice");
-const suggestionsEl = document.querySelector(".suggestions");
-const clearBtn = document.getElementById("clear-chat");
+/* ──────────────────────────────────────
+   § 4  THEME
+────────────────────────────────────── */
+function applyTheme(light) {
+  const val = light ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', val);
+  themeChk.checked = light;
+  themeMeta.content = light ? '#ffffff' : '#212121';
+  localStorage.setItem(KEY_THEME, val);
+}
 
-let lastFailedMessage = null;
+// Boot: read saved preference (dark is default)
+applyTheme(localStorage.getItem(KEY_THEME) === 'light');
 
-// Create / Restore Session
-let sessionId = localStorage.getItem(SESSION_KEY);
+themeChk.addEventListener('change', () => applyTheme(themeChk.checked));
+
+
+/* ──────────────────────────────────────
+   § 5  HAMBURGER / DROPDOWN
+────────────────────────────────────── */
+function openMenu() {
+  dropdown.classList.add('open');
+  menuBtn.classList.add('open');
+  menuBtn.setAttribute('aria-expanded', 'true');
+  dropdown.setAttribute('aria-hidden', 'false');
+  clickAway.classList.add('on');
+}
+
+function closeMenu() {
+  dropdown.classList.remove('open');
+  menuBtn.classList.remove('open');
+  menuBtn.setAttribute('aria-expanded', 'false');
+  dropdown.setAttribute('aria-hidden', 'true');
+  clickAway.classList.remove('on');
+}
+
+menuBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  dropdown.classList.contains('open') ? closeMenu() : openMenu();
+});
+
+clickAway.addEventListener('click', closeMenu);
+
+// Escape key closes menu
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeMenu();
+});
+
+
+/* ──────────────────────────────────────
+   § 6  SESSION  (unique ID per browser)
+────────────────────────────────────── */
+let sessionId = localStorage.getItem(KEY_SESS);
 if (!sessionId) {
-  sessionId = "sess_" + Math.random().toString(36).slice(2, 10);
-  localStorage.setItem(SESSION_KEY, sessionId);
+  sessionId = 'sess_' + Math.random().toString(36).slice(2, 11);
+  localStorage.setItem(KEY_SESS, sessionId);
 }
 
-let messages = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-
-// Utility
-function esc(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+function newSession() {
+  sessionId = 'sess_' + Math.random().toString(36).slice(2, 11);
+  localStorage.setItem(KEY_SESS, sessionId);
 }
+
+
+/* ──────────────────────────────────────
+   § 7  MESSAGES STATE
+────────────────────────────────────── */
+let messages = [];
+try { messages = JSON.parse(localStorage.getItem(KEY_MSGS) || '[]'); } catch (_) {}
+
+let lastFailed = null;    // for retry
 
 function persist() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  try {
+    localStorage.setItem(KEY_MSGS, JSON.stringify(messages.slice(-MAX_MSGS)));
+  } catch (_) {}
 }
 
-// Build Message Row
-function makeRow(m) {
-  const row = document.createElement("div");
-  row.className = "row " + (m.sender === "user" ? "user" : "bot");
-
-  const bubble = document.createElement("div");
-  bubble.className = "bubble " + (m.sender === "user" ? "user" : "bot");
-  bubble.innerHTML = esc(m.text).replace(/\n/g, "<br>");
-
-  const meta = document.createElement("div");
-  meta.className = "meta";
-  meta.textContent = new Date(m.ts || Date.now()).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-  bubble.appendChild(meta);
-
-  row.appendChild(bubble);
-  return row;
+function nowTime() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function renderAll() {
-  messagesEl.innerHTML = "";
-  messages.forEach((m) => messagesEl.appendChild(makeRow(m)));
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+// Safe HTML escape
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Typing Indicator
-let typingNode = null;
-function showTyping(on = true) {
-  if (on) {
-    if (!typingNode) {
-      typingNode = document.createElement("div");
-      typingNode.className = "row bot typing";
-      typingNode.innerHTML = `
-        <div class="bubble bot">
-          <div class="typing-dots">
-            <span></span><span></span><span></span>
-          </div>
-        </div>
-      `;
-      messagesEl.appendChild(typingNode);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-  } else {
-    if (typingNode) typingNode.remove();
-    typingNode = null;
+
+/* ──────────────────────────────────────
+   § 8  CHAT COLUMN  (lazy-created)
+────────────────────────────────────── */
+let chatCol = null;   // .chat-col div lives here
+
+function getCol() {
+  if (!chatCol) {
+    chatCol = document.createElement('div');
+    chatCol.className = 'chat-col';
+    chat.appendChild(chatCol);
   }
+  return chatCol;
 }
 
-// Send + Backend POST
+
+/* ──────────────────────────────────────
+   § 9  BUILD A MESSAGE ROW
+────────────────────────────────────── */
+
+// Fallback when logo image fails to load
+const BOT_ICON = `
+  <span class="bot-av-icon">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  </span>`.trim();
+
+function buildRow(msg) {
+  const wrap = document.createElement('div');
+  wrap.className = `msg-wrap ${msg.sender}`;
+
+  if (msg.sender === 'bot') {
+    wrap.innerHTML = `
+      <div class="bot-row">
+        <div class="bot-av">
+          <img src="clg_logo.png" alt=""
+               onerror="this.parentElement.innerHTML='${BOT_ICON}
+        </div>
+        <div class="bubble">${esc(msg.text).replace(/\n/g,'<br>')}</div>
+      </div>
+      <span class="msg-time">${msg.time || ''}</span>`;
+  } else {
+    wrap.innerHTML = `
+      <div class="bubble">${esc(msg.text).replace(/\n/g,'<br>')}</div>
+      <span class="msg-time">${msg.time || ''}</span>`;
+  }
+
+  return wrap;
+}
+
+
+/* ──────────────────────────────────────
+   § 10  FULL RENDER  (called on boot & clear)
+────────────────────────────────────── */
+function renderAll() {
+  // Destroy old column
+  if (chatCol) { chatCol.remove(); chatCol = null; }
+
+  if (messages.length === 0) {
+    welcome.style.display = '';          // show welcome
+  } else {
+    welcome.style.display = 'none';      // hide welcome
+    const col = getCol();
+    messages.forEach(m => col.appendChild(buildRow(m)));
+  }
+
+  scrollBottom();
+}
+
+function scrollBottom() {
+  requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
+}
+
+
+/* ──────────────────────────────────────
+   § 11  TYPING INDICATOR
+────────────────────────────────────── */
+let typingNode = null;
+
+function showTyping() {
+  if (typingNode) return;
+  typingNode = document.createElement('div');
+  typingNode.className = 'msg-wrap bot';
+  typingNode.innerHTML = `
+    <div class="typing-wrap">
+      <div class="bot-av">
+        <img src="clg_logo.png" alt=""
+             onerror="this.parentElement.innerHTML='${BOT_ICON}
+      </div>
+      <div class="typing-dots">
+        <span class="td"></span><span class="td"></span><span class="td"></span>
+      </div>
+    </div>`;
+  getCol().appendChild(typingNode);
+  scrollBottom();
+}
+
+function hideTyping() {
+  if (typingNode) { typingNode.remove(); typingNode = null; }
+}
+
+
+/* ──────────────────────────────────────
+   § 12  SEND  (core function)
+────────────────────────────────────── */
 async function sendMessage(text) {
-  if (!text.trim()) return;
+  text = text.trim();
+  if (!text) return;
 
-  const userMsg = {
-    sender: "user",
-    text: text.trim(),
-    ts: Date.now()
-  };
+  // Hide welcome screen on first message
+  welcome.style.display = 'none';
 
-  messages.push(userMsg);
+  // 1 ── Render user message immediately
+  const uMsg = { sender: 'user', text, time: nowTime() };
+  messages.push(uMsg);
   persist();
-  messagesEl.appendChild(makeRow(userMsg));
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-  inputEl.value = "";
+  getCol().appendChild(buildRow(uMsg));
+  scrollBottom();
 
-  // Start typing indicator
-  showTyping(true);
+  // 2 ── Clear input, disable send
+  msgInput.value = '';
+  resizeTextarea();
+  sendBtn.disabled = true;
+  lastFailed = text;
 
+  // 3 ── Show typing dots
+  showTyping();
+
+  // 4 ── Call backend
   try {
     const res = await fetch(BACKEND_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, sessionId })
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ message: text, sessionId })
     });
 
-    if (!res.ok) throw new Error("Server error");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const data = await res.json();
-    const reply = data.reply || data.answer || "⚠ No reply from server.";
+    const data  = await res.json();
+    const reply = (data.reply || data.answer || '⚠️ No reply received.').trim();
 
-    const botMsg = { sender: "bot", text: reply, ts: Date.now() };
-    messages.push(botMsg);
+    // Success: save + render bot reply
+    const bMsg = { sender: 'bot', text: reply, time: nowTime() };
+    messages.push(bMsg);
     persist();
+    hideTyping();
+    getCol().appendChild(buildRow(bMsg));
+    scrollBottom();
 
-    showTyping(false);
-    messagesEl.appendChild(makeRow(botMsg));
-    messagesEl.scrollTop = messagesEl.scrollHeight;
   } catch (err) {
-  showTyping(false);
+    console.error('[Campus AI] Backend error:', err);
+    hideTyping();
 
-  const errRow = document.createElement("div");
-  errRow.className = "row bot";
+    // Error row with retry button
+    const errWrap = document.createElement('div');
+    errWrap.className = 'msg-wrap bot';
+    errWrap.innerHTML = `
+      <div class="bot-row">
+        <div class="bot-av">
+          <img src="clg_logo.png" alt=""
+               onerror="this.parentElement.innerHTML='${BOT_ICON}
+        </div>
+        <div class="bubble err-bubble">
+          <p class="err-text">⚠️ Couldn't reach Campus AI. Check your connection.</p>
+          <button class="retry-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 .49-4.36"/>
+            </svg>
+            Retry
+          </button>
+        </div>
+      </div>`;
+    getCol().appendChild(errWrap);
+    scrollBottom();
 
-  errRow.innerHTML = `
-    <div class="bubble bot">
-      🎓 Campus AI is currently getting an update. Please try again in a few moments!
-.<br><br>
-      <button class="retry-btn"> Retry</button>
-    </div>
-  `;
+    errWrap.querySelector('.retry-btn').addEventListener('click', () => {
+      errWrap.remove();
+      if (lastFailed) sendMessage(lastFailed);
+    });
 
-  messagesEl.appendChild(errRow);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-
-  errRow.querySelector(".retry-btn").addEventListener("click", () => {
-    if (lastFailedMessage) {
-      sendMessage(lastFailedMessage);
-    }
-  });
-
-  console.error("Backend error:", err);
+  } finally {
+    // Re-enable send only if user has typed more text
+    sendBtn.disabled = !msgInput.value.trim();
+  }
 }
 
-   lastFailedMessage = text;
+
+/* ──────────────────────────────────────
+   § 13  INPUT — auto-resize + events
+────────────────────────────────────── */
+function resizeTextarea() {
+  msgInput.style.height = 'auto';
+  msgInput.style.height = Math.min(msgInput.scrollHeight, 160) + 'px';
 }
 
-// UI Handlers
-sendBtn.addEventListener("click", () => {
-  const v = inputEl.value;
-  if (v) sendMessage(v);
+// Re-size + toggle send button state on every keystroke
+msgInput.addEventListener('input', () => {
+  resizeTextarea();
+  sendBtn.disabled = !msgInput.value.trim();
 });
 
-inputEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
+// Enter = send | Shift+Enter = newline
+msgInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    sendBtn.click();
+    if (!sendBtn.disabled) sendMessage(msgInput.value);
   }
 });
-clearBtn.addEventListener("click", () => {
-  messages = [];
-  persist();
-  messagesEl.innerHTML = "";
 
-  sessionId = "sess_" + Math.random().toString(36).slice(2, 10);
-  localStorage.setItem(SESSION_KEY, sessionId);
+sendBtn.addEventListener('click', () => {
+  if (!sendBtn.disabled) sendMessage(msgInput.value);
 });
 
 
-// Suggestions
-if (suggestionsEl) {
-  suggestionsEl.addEventListener("click", (e) => {
-    if (e.target.tagName === "BUTTON") {
-      inputEl.value = e.target.textContent;
-      inputEl.focus();
-    }
-  });
-}
-
-// Speech Recognition (if supported)
-window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (window.SpeechRecognition) {
-  const rec = new window.SpeechRecognition();
-  rec.lang = "en-IN";
-  rec.interimResults = false;
-  rec.maxAlternatives = 1;
-
-  voiceBtn.addEventListener("click", () => {
-    try {
-      rec.start();
-      voiceBtn.classList.add("listening");
-    } catch {}
-  });
-
-  rec.addEventListener("result", (e) => {
-    const text = e.results[0][0].transcript;
-    inputEl.value = text;
-    sendMessage(text);
-  });
-
-  rec.addEventListener("end", () => voiceBtn.classList.remove("listening"));
-} else {
-  voiceBtn.style.display = "none";
-}
-
-// Developer Helper
-window.clearCollegeChat = function () {
+/* ──────────────────────────────────────
+   § 14  CLEAR / NEW CHAT
+────────────────────────────────────── */
+function clearChat() {
   messages = [];
   persist();
+  if (chatCol) { chatCol.remove(); chatCol = null; }
   renderAll();
-};
+  newSession();
+  closeMenu();
+}
 
-// First-Time Greeting
+clearBtn.addEventListener('click',   clearChat);
+newChatBtn.addEventListener('click', clearChat);
+
+
+/* ──────────────────────────────────────
+   § 15  SUGGESTION CHIPS  (event delegation)
+────────────────────────────────────── */
+document.addEventListener('click', e => {
+  const chip = e.target.closest('[data-q]');
+  if (!chip) return;
+  const q = chip.dataset.q;
+  msgInput.value = q;
+  resizeTextarea();
+  sendBtn.disabled = false;
+  sendMessage(q);
+});
+
+
+/* ──────────────────────────────────────
+   § 16  VOICE  (Web Speech API)
+────────────────────────────────────── */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SR) {
+  const rec = new SR();
+  rec.lang            = 'en-IN';
+  rec.interimResults  = false;
+  rec.maxAlternatives = 1;
+
+  micBtn.addEventListener('click', () => {
+    try { rec.start(); micBtn.classList.add('on'); } catch (_) {}
+  });
+
+  rec.addEventListener('result', e => {
+    const t = e.results[0][0].transcript;
+    msgInput.value = t;
+    resizeTextarea();
+    sendBtn.disabled = false;
+    sendMessage(t);
+  });
+
+  const stopMic = () => micBtn.classList.remove('on');
+  rec.addEventListener('end',   stopMic);
+  rec.addEventListener('error', stopMic);
+
+} else {
+  // Hide mic if unsupported
+  micBtn.style.display = 'none';
+}
+
+
+/* ──────────────────────────────────────
+   § 17  BOOT
+────────────────────────────────────── */
+
+// Seed a greeting if chat is brand-new
 if (messages.length === 0) {
-  const greet = {
-    sender: "bot",
-    text: "Welcome to Campus AI — Ask about schedules, events, fees, academics, or general questions!",
-    ts: Date.now()
-  };
-  messages.push(greet);
+  messages.push({
+    sender : 'bot',
+    text   : '👋 Hello! I\'m Campus AI — your assistant for The New College, Chennai.\n\nAsk me about timetables, fee structures, departments, events, contacts, and more!',
+    time   : nowTime()
+  });
   persist();
 }
 
-// Render on load
 renderAll();
-// Render on load
-renderAll();
-
-
