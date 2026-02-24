@@ -1,23 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Register - Campus AI</title>
-  <link rel="stylesheet" href="auth.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account - Campus AI</title>
+  <link rel="stylesheet" href="auth.css" />
 </head>
 <body>
 
   <div class="auth-box">
-    <h2>Register</h2>
+    <h2>Create Account</h2>
 
-    <input type="text" id="name" placeholder="Full Name" />
-    <input type="text" id="register_number" placeholder="Register Number" />
-    <input type="text" id="department" placeholder="Department" />
-    <input type="number" id="year" placeholder="Year" />
-    <input type="password" id="password" placeholder="Password" />
+    <input 
+      type="text" 
+      id="name" 
+      placeholder="Full Name" 
+      required
+    />
+
+    <input 
+      type="text" 
+      id="register_number" 
+      placeholder="Register Number" 
+      required
+    />
+
+    <input 
+      type="text" 
+      id="department" 
+      placeholder="Department" 
+      required
+    />
+
+    <input 
+      type="number" 
+      id="year" 
+      placeholder="Year" 
+      min="1"
+      max="5"
+      required
+    />
+
+    <input 
+      type="password" 
+      id="password" 
+      placeholder="Password" 
+      required
+    />
 
     <button onclick="register()">Register</button>
 
-    <p>Already have account? <a href="login.html">Login</a></p>
+    <p>
+      Already have an account?
+      <a href="login.html">Login</a>
+    </p>
   </div>
 
   <script src="auth.js"></script>
