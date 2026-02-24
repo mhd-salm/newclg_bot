@@ -1,20 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Campus AI</title>
-  <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="auth.css" />
 </head>
 <body>
 
   <div class="auth-box">
-    <h2>Login</h2>
+    <h2>Welcome Back</h2>
 
-    <input type="text" id="register_number" placeholder="Register Number" />
-    <input type="password" id="password" placeholder="Password" />
+    <input 
+      type="text" 
+      id="register_number" 
+      placeholder="Register Number" 
+      required
+    />
+
+    <input 
+      type="password" 
+      id="password" 
+      placeholder="Password" 
+      required
+    />
 
     <button onclick="login()">Login</button>
 
-    <p>No account? <a href="register.html">Register</a></p>
+    <p>
+      Don’t have an account?
+      <a href="register.html">Create one</a>
+    </p>
   </div>
 
   <script src="auth.js"></script>
