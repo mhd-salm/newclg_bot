@@ -2,8 +2,12 @@
    CAMPUS AI — script.js
    Pure JavaScript, no frameworks
 ════════════════════════════════════════════════════════════ */
+// Redirect to login if no token
+const token = localStorage.getItem("access_token");
 
-console.log("Script running");  
+if (!token) {
+  window.location.href = "/login.html";
+}
 /* ──────────────────────────────────────
    § 1  CONFIG
 ────────────────────────────────────── */
@@ -510,3 +514,4 @@ if (messages.length === 0) {
 }
 
 renderAll();
+
