@@ -3,87 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" id="theme-color-meta" content="#212121" />
   <title>Create Account - Campus AI</title>
+  <link rel="icon" href="clg_logo.png" type="image/png" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="auth.css" />
 </head>
-<body>
-    <div class="header-actions">
-    <div class="dd-row">
-      <div class="dd-row-left">
-        <span>Light mode</span>
+<body class="auth-page">
+  <header class="auth-topbar">
+    <div class="auth-topbar-inner">
+      <div class="auth-brand">
+        <img src="clg_logo.png" alt="" onerror="this.style.display='none'" />
+        <span>Campus AI</span>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="theme-chk" />
-        <span class="toggle-track">
-          <span class="toggle-thumb"></span>
-        </span>
-      </label>
+      <div class="dd-row">
+        <div class="dd-row-left">
+          <span>Light mode</span>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="theme-chk" />
+          <span class="toggle-track">
+            <span class="toggle-thumb"></span>
+          </span>
+        </label>
+      </div>
     </div>
-  </div>
-  <div class="auth-box">
-    <h2>Create Account</h2>
+  </header>
 
-    <input 
-      type="text" 
-      id="name" 
-      placeholder="Full Name" 
-      required
-    />
+  <main class="auth-container">
+    <section class="auth-box">
+      <h2>Create account</h2>
+      <p class="auth-sub">Start using Campus AI with your college details.</p>
 
-    <input 
-      type="text" 
-      id="register_number" 
-      placeholder="Register Number" 
-      required
-    />
+      <form onsubmit="event.preventDefault(); register();">
+        <input type="text" id="name" placeholder="Full Name" autocomplete="name" required />
+        <input
+          type="text"
+          id="register_number"
+          placeholder="Register Number"
+          autocomplete="username"
+          required
+        />
+        <input type="text" id="department" placeholder="Department" required />
+        <input type="number" id="year" placeholder="Year" min="1" max="5" required />
+        <input
+          type="password"
+          id="password"
+          placeholder="Password"
+          autocomplete="new-password"
+          required
+        />
+        <button type="submit">Create Account</button>
+      </form>
 
-    <input 
-      type="text" 
-      id="department" 
-      placeholder="Department" 
-      required
-    />
+      <p>Already have an account? <a href="login.html">Log in</a></p>
+    </section>
+  </main>
 
-    <input 
-      type="number" 
-      id="year" 
-      placeholder="Year" 
-      min="1"
-      max="5"
-      required
-    />
-
-    <input 
-      type="password" 
-      id="password" 
-      placeholder="Password" 
-      required
-    />
-
-    <button onclick="register()">Register</button>
-
-    <p>
-      Already have an account?
-      <a href="login.html">Login</a>
-    </p>
-  </div>
   <script>
-  const themeChk = document.getElementById("theme-chk");
+    const themeKey = "campus_ai_theme_v5";
+    const themeChk = document.getElementById("theme-chk");
+    const themeMeta = document.getElementById("theme-color-meta");
+    const currentTheme = localStorage.getItem(themeKey) || "dark";
 
-  const currentTheme =
-    localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", currentTheme);
+    themeChk.checked = currentTheme === "light";
+    themeMeta.content = currentTheme === "light" ? "#ffffff" : "#212121";
 
-  document.documentElement.setAttribute("data-theme", currentTheme);
-
-  themeChk.checked = currentTheme === "light";
-
-  themeChk.addEventListener("change", () => {
-    const newTheme = themeChk.checked ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", newTheme);
-    localStorage.setItem("theme", newTheme);
-  });
-</script>
+    themeChk.addEventListener("change", () => {
+      const newTheme = themeChk.checked ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", newTheme);
+      localStorage.setItem(themeKey, newTheme);
+      themeMeta.content = newTheme === "light" ? "#ffffff" : "#212121";
+    });
+  </script>
   <script src="auth.js"></script>
 </body>
 </html>
