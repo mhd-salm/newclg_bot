@@ -2,11 +2,13 @@
    CAMPUS AI — script.js
    Pure JavaScript, no frameworks
 ════════════════════════════════════════════════════════════ */
-// Redirect to login if no token
+// Redirect to login if no token; send admins to dashboard (chat is student-only)
 const token = localStorage.getItem("access_token");
 
 if (!token) {
   window.location.href = "/login.html";
+} else if (localStorage.getItem("user_role") === "admin") {
+  window.location.href = "/admin.html";
 }
 /* ──────────────────────────────────────
    § 1  CONFIG
