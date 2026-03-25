@@ -17,14 +17,10 @@
         <span>Campus AI</span>
       </div>
       <div class="dd-row">
-        <div class="dd-row-left">
-          <span>Light mode</span>
-        </div>
+        <div class="dd-row-left"><span>Light mode</span></div>
         <label class="toggle">
           <input type="checkbox" id="theme-chk" />
-          <span class="toggle-track">
-            <span class="toggle-thumb"></span>
-          </span>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
         </label>
       </div>
     </div>
@@ -32,48 +28,118 @@
 
   <main class="auth-container">
     <section class="auth-box">
-      <h2>Welcome back</h2>
-      <p class="auth-sub">Sign in to continue chatting with Campus AI.</p>
 
-      <form onsubmit="event.preventDefault(); login();">
-        <input
-          type="text"
-          id="register_number"
-          placeholder="Register Number"
-          autocomplete="username"
-          required
-        />
-        <input
-          type="password"
-          id="password"
-          placeholder="Password"
-          autocomplete="current-password"
-          required
-        />
-        <button type="submit">Continue</button>
-      </form>
+      <!-- Role toggle pills -->
+      <div class="role-toggle">
+        <button class="role-pill active" id="pill-student" onclick="switchRole('student')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Student
+        </button>
+        <button class="role-pill" id="pill-admin" onclick="switchRole('admin')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Admin
+        </button>
+      </div>
 
-      <p>Don't have an account? <a href="register.html">Create one</a></p>
+      <!-- ── STUDENT FORM ── -->
+      <div id="student-form">
+        <h2>Welcome back</h2>
+        <p class="auth-sub">Sign in to continue chatting with Campus AI.</p>
+        <form onsubmit="event.preventDefault(); loginStudent();">
+          <input type="text"     id="s-regno"    placeholder="Register Number" autocomplete="username" required />
+          <input type="password" id="s-password" placeholder="Password" autocomplete="current-password" required />
+          <button type="submit">Continue</button>
+        </form>
+        <p>Don't have an account? <a href="register.html">Create one</a></p>
+      </div>
+
+      <!-- ── ADMIN FORM ── -->
+      <div id="admin-form" style="display:none;">
+        <h2>Admin Login</h2>
+        <p class="auth-sub">Sign in to the Campus AI admin panel.</p>
+        <form onsubmit="event.preventDefault(); loginAdmin();">
+          <input type="text"     id="a-username" placeholder="Admin Username" autocomplete="username" required />
+          <input type="password" id="a-password" placeholder="Password" autocomplete="current-password" required />
+          <button type="submit">Sign In</button>
+        </form>
+        <p>New admin? <a href="admin-register.html">Register with secret key</a></p>
+      </div>
+
     </section>
   </main>
 
   <script>
-    const themeKey = "campus_ai_theme_v5";
-    const themeChk = document.getElementById("theme-chk");
+    /* ── Theme ── */
+    const themeKey  = "campus_ai_theme_v5";
+    const themeChk  = document.getElementById("theme-chk");
     const themeMeta = document.getElementById("theme-color-meta");
-    const currentTheme = localStorage.getItem(themeKey) || "dark";
-
-    document.documentElement.setAttribute("data-theme", currentTheme);
-    themeChk.checked = currentTheme === "light";
-    themeMeta.content = currentTheme === "light" ? "#ffffff" : "#212121";
-
+    const cur       = localStorage.getItem(themeKey) || "dark";
+    document.documentElement.setAttribute("data-theme", cur);
+    themeChk.checked  = cur === "light";
+    themeMeta.content = cur === "light" ? "#ffffff" : "#212121";
     themeChk.addEventListener("change", () => {
-      const newTheme = themeChk.checked ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", newTheme);
-      localStorage.setItem(themeKey, newTheme);
-      themeMeta.content = newTheme === "light" ? "#ffffff" : "#212121";
+      const t = themeChk.checked ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", t);
+      localStorage.setItem(themeKey, t);
+      themeMeta.content = t === "light" ? "#ffffff" : "#212121";
     });
+
+    /* ── Role toggle ── */
+    function switchRole(role) {
+      const isAdmin = role === "admin";
+      document.getElementById("student-form").style.display = isAdmin ? "none"  : "";
+      document.getElementById("admin-form").style.display   = isAdmin ? ""      : "none";
+      document.getElementById("pill-student").classList.toggle("active", !isAdmin);
+      document.getElementById("pill-admin").classList.toggle("active",  isAdmin);
+    }
+
+    const BASE_URL = "https://newclg-bot-backend.onrender.com";
+
+    /* ── Student login ── */
+    async function loginStudent() {
+      const register_number = document.getElementById("s-regno").value;
+      const password        = document.getElementById("s-password").value;
+      try {
+        const res  = await fetch(BASE_URL + "/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ register_number, password }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem("access_token", data.access_token);
+          localStorage.setItem("user_role", "student");
+          window.location.href = "index.html";
+        } else {
+          alert(data.error || "Login failed");
+        }
+      } catch {
+        alert("Network error. Please try again.");
+      }
+    }
+
+    /* ── Admin login ── */
+    async function loginAdmin() {
+      const username = document.getElementById("a-username").value;
+      const password = document.getElementById("a-password").value;
+      try {
+        const res  = await fetch(BASE_URL + "/auth/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem("access_token", data.access_token);
+          localStorage.setItem("user_role", "admin");
+          window.location.href = "admin.html";
+        } else {
+          alert(data.error || "Admin login failed");
+        }
+      } catch {
+        alert("Network error. Please try again.");
+      }
+    }
   </script>
-  <script src="auth.js"></script>
 </body>
 </html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f0f0f" />
+  <title>Admin Panel — Campus AI</title>
+  <link rel="icon" href="clg_logo.png" type="image/png" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="clg_logo.png" alt="" onerror="this.style.display='none'" />
+      <div>
+        <span class="brand-name">Campus AI</span>
+        <span class="brand-role">Admin Panel</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-tab="day-orders">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Day Orders
+      </button>
+      <button class="nav-item" data-tab="timetable">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Timetable
+      </button>
+      <button class="nav-item" data-tab="announcements">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Announcements
+      </button>
+      <button class="nav-item" data-tab="students">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Students
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span id="admin-name-display">Admin</span>
+      <button class="logout-btn" onclick="logout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main-content">
+
+    <!-- Mobile header -->
+    <header class="mobile-header">
+      <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </button>
+      <span>Campus AI Admin</span>
+    </header>
+
+    <!-- ══════════════════════════════════
+         TAB: DAY ORDERS
+    ══════════════════════════════════ -->
+    <section class="tab-panel active" id="tab-day-orders">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">Day Order Overrides</h1>
+          <p class="panel-sub">Override the day order for any date — set it to Holiday (0) or a specific order (1–6).</p>
+        </div>
+        <button class="btn btn-primary" onclick="openDOModal()">+ Add Override</button>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div id="do-loading" class="loading-row">Loading...</div>
+          <table class="data-table" id="do-table" style="display:none;">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Day</th>
+                <th>Day Order</th>
+                <th>Reason</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="do-tbody"></tbody>
+          </table>
+          <div id="do-empty" class="empty-state" style="display:none;">
+            No overrides yet. The system uses the default calendar from rr.txt.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════
+         TAB: TIMETABLE
+    ══════════════════════════════════ -->
+    <section class="tab-panel" id="tab-timetable">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">Timetable Editor</h1>
+          <p class="panel-sub">Edit subjects per Year × Day Order × Period. DB entries override rr.txt.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openTTModal()">+ Add / Edit Slot</button>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-bar">
+        <label>Year
+          <select id="tt-filter-year" onchange="renderTimetable()">
+            <option value="1">Year 1</option>
+            <option value="2">Year 2</option>
+            <option value="3">Year 3</option>
+          </select>
+        </label>
+        <label>Day Order
+          <select id="tt-filter-do" onchange="renderTimetable()">
+            <option value="1">I</option>
+            <option value="2">II</option>
+            <option value="3">III</option>
+            <option value="4">IV</option>
+            <option value="5">V</option>
+            <option value="6">VI</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div id="tt-loading" class="loading-row">Loading...</div>
+          <table class="data-table" id="tt-table" style="display:none;">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Subject</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tt-tbody"></tbody>
+          </table>
+          <div id="tt-empty" class="empty-state" style="display:none;">
+            No DB entries for this filter — the chatbot uses rr.txt for this combination.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════
+         TAB: ANNOUNCEMENTS
+    ══════════════════════════════════ -->
+    <section class="tab-panel" id="tab-announcements">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">Announcements</h1>
+          <p class="panel-sub">Active announcements are shown to students in the chatbot.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openAnnModal()">+ New Announcement</button>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div id="ann-loading" class="loading-row">Loading...</div>
+          <div id="ann-list"></div>
+          <div id="ann-empty" class="empty-state" style="display:none;">No announcements yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════
+         TAB: STUDENTS
+    ══════════════════════════════════ -->
+    <section class="tab-panel" id="tab-students">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">Registered Students</h1>
+          <p class="panel-sub">All students who have created an account.</p>
+        </div>
+        <input type="search" class="search-input" id="student-search" placeholder="Search by name or reg. no…" oninput="filterStudents()" />
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div id="stu-loading" class="loading-row">Loading...</div>
+          <table class="data-table" id="stu-table" style="display:none;">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Reg. No.</th>
+                <th>Department</th>
+                <th>Year</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="stu-tbody"></tbody>
+          </table>
+          <div id="stu-empty" class="empty-state" style="display:none;">No students found.</div>
+        </div>
+      </div>
+    </section>
+
+  </main><!-- /main-content -->
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODALS
+  ══════════════════════════════════════════════════════════ -->
+
+  <!-- Day Order Modal -->
+  <div class="modal-overlay" id="do-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="do-modal-title">Add Day Order Override</h2>
+        <button class="modal-close" onclick="closeDOModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <label>Date <input type="date" id="do-date" /></label>
+        <label>Day Order
+          <select id="do-value">
+            <option value="0">0 — Holiday (no classes)</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </label>
+        <label>Reason (optional) <input type="text" id="do-reason" placeholder="e.g. Unexpected holiday" /></label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeDOModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveDayOrder()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timetable Modal -->
+  <div class="modal-overlay" id="tt-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Edit Timetable Slot</h2>
+        <button class="modal-close" onclick="closeTTModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <label>Year
+          <select id="tt-year">
+            <option value="1">Year 1</option>
+            <option value="2">Year 2</option>
+            <option value="3">Year 3</option>
+          </select>
+        </label>
+        <label>Day Order
+          <select id="tt-do">
+            <option value="1">I</option><option value="2">II</option>
+            <option value="3">III</option><option value="4">IV</option>
+            <option value="5">V</option><option value="6">VI</option>
+          </select>
+        </label>
+        <label>Period
+          <select id="tt-period">
+            <option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+        <label>Subject <input type="text" id="tt-subject" placeholder="e.g. Python Theory (JM)" /></label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeTTModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTimetableSlot()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Announcement Modal -->
+  <div class="modal-overlay" id="ann-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="ann-modal-title">New Announcement</h2>
+        <button class="modal-close" onclick="closeAnnModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <label>Title <input type="text" id="ann-title" placeholder="Short title" /></label>
+        <label>Body <textarea id="ann-body" rows="4" placeholder="Full announcement text…"></textarea></label>
+        <label class="toggle-label">
+          Active
+          <label class="toggle">
+            <input type="checkbox" id="ann-active" checked />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </label>
+        <input type="hidden" id="ann-edit-id" value="" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeAnnModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveAnnouncement()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Delete Modal -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2>Confirm Delete</h2>
+        <button class="modal-close" onclick="closeConfirm()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-msg">Are you sure?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost"   onclick="closeConfirm()">Cancel</button>
+        <button class="btn btn-danger"  id="confirm-ok">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

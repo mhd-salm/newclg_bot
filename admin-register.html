@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" id="theme-color-meta" content="#212121" />
+  <title>Admin Registration - Campus AI</title>
+  <link rel="icon" href="clg_logo.png" type="image/png" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body class="auth-page">
+  <header class="auth-topbar">
+    <div class="auth-topbar-inner">
+      <div class="auth-brand">
+        <img src="clg_logo.png" alt="" onerror="this.style.display='none'" />
+        <span>Campus AI — Admin Setup</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth-container">
+    <section class="auth-box">
+      <div class="admin-badge">🛡️ Admin Registration</div>
+      <h2>Create Admin Account</h2>
+      <p class="auth-sub">You need the secret key provided by your system administrator.</p>
+
+      <form onsubmit="event.preventDefault(); registerAdmin();">
+        <input type="text"     id="username"   placeholder="Choose a username" required />
+        <input type="password" id="password"   placeholder="Choose a password" required />
+        <input type="password" id="secret_key" placeholder="Secret admin key"  required />
+        <button type="submit">Create Admin Account</button>
+      </form>
+
+      <p>Already have an account? <a href="login.html">Log in</a></p>
+    </section>
+  </main>
+
+  <script>
+    const themeKey  = "campus_ai_theme_v5";
+    const cur       = localStorage.getItem(themeKey) || "dark";
+    document.documentElement.setAttribute("data-theme", cur);
+    document.getElementById("theme-color-meta").content = cur === "light" ? "#ffffff" : "#212121";
+
+    const BASE_URL = "https://newclg-bot-backend.onrender.com";
+
+    async function registerAdmin() {
+      const username   = document.getElementById("username").value.trim();
+      const password   = document.getElementById("password").value;
+      const secret_key = document.getElementById("secret_key").value;
+
+      try {
+        const res  = await fetch(BASE_URL + "/auth/admin/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password, secret_key }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert("✅ " + data.message + "\nYou can now log in.");
+          window.location.href = "login.html";
+        } else {
+          alert("❌ " + (data.error || "Registration failed"));
+        }
+      } catch {
+        alert("Network error. Please try again.");
+      }
+    }
+  </script>
+</body>
+</html>
