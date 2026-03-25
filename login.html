@@ -33,7 +33,12 @@
   <main class="auth-container">
     <section class="auth-box">
       <h2>Welcome back</h2>
-      <p class="auth-sub">Sign in to continue chatting with Campus AI.</p>
+      <p class="auth-sub">Sign in as a student or an administrator.</p>
+
+      <fieldset class="login-mode" style="border:none;padding:0;margin:0 0 1rem;display:flex;gap:1.25rem;">
+        <label><input type="radio" name="login_role" value="student" checked /> Student</label>
+        <label><input type="radio" name="login_role" value="admin" /> Admin</label>
+      </fieldset>
 
       <form onsubmit="event.preventDefault(); login();">
         <input
@@ -42,6 +47,13 @@
           placeholder="Register Number"
           autocomplete="username"
           required
+        />
+        <input
+          type="text"
+          id="admin_username"
+          placeholder="Admin username"
+          autocomplete="username"
+          style="display:none;"
         />
         <input
           type="password"
@@ -72,6 +84,20 @@
       document.documentElement.setAttribute("data-theme", newTheme);
       localStorage.setItem(themeKey, newTheme);
       themeMeta.content = newTheme === "light" ? "#ffffff" : "#212121";
+    });
+
+    const regInput = document.getElementById("register_number");
+    const admInput = document.getElementById("admin_username");
+    const regLink = document.getElementById("register-link");
+    document.querySelectorAll('input[name="login_role"]').forEach((r) => {
+      r.addEventListener("change", () => {
+        const admin = document.querySelector('input[name="login_role"]:checked').value === "admin";
+        regInput.style.display = admin ? "none" : "";
+        regInput.required = !admin;
+        admInput.style.display = admin ? "" : "none";
+        admInput.required = admin;
+        regLink.style.display = admin ? "none" : "";
+      });
     });
   </script>
   <script src="auth.js"></script>
