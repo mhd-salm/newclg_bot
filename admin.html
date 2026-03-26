@@ -239,13 +239,17 @@
       </div>
     </section>
 
-    <!-- ══════════════ TIMETABLE ══════════════ -->
+   <!-- ══════════════ TIMETABLE ══════════════ -->
     <section class="tab-panel" id="tab-timetable">
       <div class="panel-header">
         <div>
           <h1 class="panel-title">Timetable Editor</h1>
           <p class="panel-sub">Manage timetables by degree, year, and day order. Click a cell to edit, then Save All.</p>
         </div>
+        <button id="seed-all-btn" class="btn btn-ghost btn-sm" onclick="seedAllFromRR()" title="Import all rr.txt data into the database">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Seed from rr.txt
+        </button>
       </div>
 
       <!-- Degree pills -->
