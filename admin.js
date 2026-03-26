@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════
-   Campus AI — admin.js  (full rebuild with degree timetable)
+   Campus AI — admin.js  (full rebuild — timetable fully DB-driven)
 ════════════════════════════════════════════════════════════ */
 
 const BASE_URL = "https://newclg-bot-backend.onrender.com";
@@ -66,8 +66,7 @@ function escHtml(str) {
 function todayISO() { return new Date().toISOString().slice(0,10); }
 
 // ════════════════════════════════════════════════════════════
-//  RR.TXT SEED DATA  — pre-populate UI so admin can save to DB
-//  Once saved to DB, the chatbot uses DB and rr.txt is fallback
+//  RR.TXT SEED DATA
 // ════════════════════════════════════════════════════════════
 
 const RR_SEED = {
@@ -165,12 +164,12 @@ async function saveDayOrder() {
 }
 
 // ════════════════════════════════════════════════════════════
-//  TIMETABLE  — full degree/year/day-order editor
+//  TIMETABLE  — fully DB-driven, all CRUD via UI
 // ════════════════════════════════════════════════════════════
 
 let ttLoaded     = false;
-let ttAllData    = [];          // all entries from DB
-let ttDepts      = [];          // list of department strings
+let ttAllData    = [];
+let ttDepts      = [];
 let ttActiveDept = null;
 let ttActiveYear = null;
 let ttActiveDO   = 1;
@@ -179,11 +178,8 @@ const ROMAN = ["","I","II","III","IV","V","VI"];
 
 async function initTimetable() {
   ttLoaded = true;
-
-  // Show a loading state in the dept bar
   document.getElementById("tt-dept-bar").innerHTML =
     `<div class="loading-row" style="padding:16px 0">Loading timetable data…</div>`;
-
   await loadAllTimetableData();
   renderDeptBar();
 }
@@ -195,17 +191,11 @@ async function loadAllTimetableData() {
       apiFetch("/admin/timetable/departments"),
     ]);
     if (!entriesRes || !deptsRes) return;
-
     ttAllData = await entriesRes.json();
     ttDepts   = await deptsRes.json();
-
-    // If no departments in DB yet, seed from RR_SEED keys
-    if (ttDepts.length === 0) {
-      ttDepts = Object.keys(RR_SEED);
-    }
+    if (ttDepts.length === 0) ttDepts = Object.keys(RR_SEED);
   } catch(e) {
     console.error("Failed to load timetable data:", e);
-    // Fallback to seed data
     ttDepts = Object.keys(RR_SEED);
   }
 }
@@ -213,11 +203,7 @@ async function loadAllTimetableData() {
 // ── Degree bar ─────────────────────────────────────────────
 function renderDeptBar() {
   const bar = document.getElementById("tt-dept-bar");
-  bar.innerHTML = "";   // ← FIX: always clear the loading spinner first
-
-  if (ttDepts.length === 0 && Object.keys(RR_SEED).length === 0) {
-    bar.innerHTML = `<div class="empty-state" style="padding:0">No degrees yet. Click <strong>+ Add Degree</strong> to get started.</div>`;
-  }
+  bar.innerHTML = "";
 
   ttDepts.forEach(dept => {
     const btn = document.createElement("button");
@@ -228,20 +214,16 @@ function renderDeptBar() {
     bar.appendChild(btn);
   });
 
-  // Add degree button
   const addBtn = document.createElement("button");
   addBtn.className = "tt-dept-pill add-pill";
   addBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Degree`;
   addBtn.onclick = openAddDeptModal;
   bar.appendChild(addBtn);
 
-  // Pick first dept if none active
-  if (!ttActiveDept && ttDepts.length > 0) {
-    ttActiveDept = ttDepts[0];
-  }
+  if (!ttActiveDept && ttDepts.length > 0) ttActiveDept = ttDepts[0];
 
   if (ttActiveDept) {
-    renderYearTabs();
+    renderYearSection();
   } else {
     document.getElementById("tt-year-section").innerHTML =
       `<div class="empty-state">No degrees yet. Click <strong>+ Add Degree</strong> to get started.</div>`;
@@ -251,25 +233,20 @@ function renderDeptBar() {
 function selectDept(dept) {
   ttActiveDept = dept;
   ttActiveYear = null;
+  ttActiveDO   = 1;
   renderDeptBar();
 }
 
 // ── Year tabs ──────────────────────────────────────────────
-function renderYearTabs() {
+function getYearsForDept(dept) {
+  const dbYears   = [...new Set(ttAllData.filter(e => e.department === dept).map(e => e.year))];
+  const seedYears = RR_SEED[dept] ? Object.keys(RR_SEED[dept]).map(Number) : [];
+  return [...new Set([...dbYears, ...seedYears])].sort((a,b) => a-b);
+}
+
+function renderYearSection() {
   const section = document.getElementById("tt-year-section");
-
-  // Get years from DB entries for this dept
-  const dbYears = [...new Set(
-    ttAllData.filter(e => e.department === ttActiveDept).map(e => e.year)
-  )];
-
-  // Also pull years from seed data if dept is in seed
-  const seedYears = RR_SEED[ttActiveDept]
-    ? Object.keys(RR_SEED[ttActiveDept]).map(Number)
-    : [];
-
-  // Merge and sort
-  const years = [...new Set([...dbYears, ...seedYears])].sort((a,b) => a-b);
+  const years   = getYearsForDept(ttActiveDept);
 
   if (!ttActiveYear || !years.includes(ttActiveYear)) {
     ttActiveYear = years[0] || null;
@@ -277,31 +254,45 @@ function renderYearTabs() {
 
   let html = `<div class="tt-year-bar">`;
   years.forEach(y => {
-    html += `<button class="tt-year-pill${y===ttActiveYear?" active":""}" onclick="selectYear(${y})">Year ${y}
+    html += `<button class="tt-year-pill${y===ttActiveYear?" active":""}" onclick="selectYear(${y})">
+      Year ${y}
       <span class="tt-year-del" onclick="deleteYear(event,${y})" title="Delete year">&times;</span>
     </button>`;
   });
   html += `<button class="tt-year-pill add-pill" onclick="openAddYearModal()">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Year
   </button></div>`;
-
-  html += `<div id="tt-do-section"></div>`;
+  html += `<div id="tt-inner-section"></div>`;
   section.innerHTML = html;
 
-  if (ttActiveYear) renderDOTabs();
+  if (ttActiveYear) {
+    renderDOSection();
+  } else {
+    document.getElementById("tt-inner-section").innerHTML =
+      `<div class="empty-state" style="margin-top:12px">No years yet. Click <strong>+ Add Year</strong> to create one.</div>`;
+  }
 }
 
 function selectYear(y) {
   ttActiveYear = y;
-  renderYearTabs();
+  ttActiveDO   = 1;
+  renderYearSection();
 }
 
 // ── Day Order tabs ─────────────────────────────────────────
-function renderDOTabs() {
-  const section = document.getElementById("tt-do-section");
+function renderDOSection() {
+  const section = document.getElementById("tt-inner-section");
   let html = `<div class="tt-do-bar">`;
   for (let i = 1; i <= 6; i++) {
-    html += `<button class="tt-do-pill${i===ttActiveDO?" active":""}" onclick="selectDO(${i})">DO ${ROMAN[i]}</button>`;
+    // Show count of saved periods for this DO
+    const count = ttAllData.filter(e =>
+      e.department === ttActiveDept && e.year === ttActiveYear && e.day_order === i
+    ).length;
+    const seedCount = (RR_SEED[ttActiveDept]?.[ttActiveYear]?.[i] || []).length;
+    const hasData   = count > 0 || seedCount > 0;
+    html += `<button class="tt-do-pill${i===ttActiveDO?" active":""}" onclick="selectDO(${i})">
+      DO ${ROMAN[i]}${count > 0 ? ` <span style="opacity:0.6;font-size:11px">(${count})</span>` : (seedCount > 0 ? ` <span style="opacity:0.4;font-size:10px">✦</span>` : '')}
+    </button>`;
   }
   html += `</div><div id="tt-grid-section"></div>`;
   section.innerHTML = html;
@@ -310,56 +301,52 @@ function renderDOTabs() {
 
 function selectDO(n) {
   ttActiveDO = n;
-  renderDOTabs();
+  renderDOSection();
 }
 
 // ── Period grid ────────────────────────────────────────────
 function renderGrid() {
   const container = document.getElementById("tt-grid-section");
 
-  // DB entries for this combination
   const dbEntries = ttAllData.filter(e =>
     e.department === ttActiveDept &&
     e.year       === ttActiveYear &&
     e.day_order  === ttActiveDO
   ).sort((a,b) => a.period - b.period);
 
-  // Seed entries for this combination (only if no DB entries exist)
   const seedSubjects = (RR_SEED[ttActiveDept]?.[ttActiveYear]?.[ttActiveDO]) || [];
   const hasDbData    = dbEntries.length > 0;
 
-  // Build period list: prefer DB, fall back to seed
   const maxPeriod = hasDbData
     ? Math.max(5, ...dbEntries.map(e => e.period))
     : Math.max(5, seedSubjects.length);
 
-  // Show an info banner if we're showing seed/fallback data
-  const seedBanner = (!hasDbData && seedSubjects.length > 0)
-    ? `<div style="
+  // Status banner
+  let banner = "";
+  if (!hasDbData && seedSubjects.length > 0) {
+    banner = `<div style="
         display:flex;align-items:center;gap:10px;padding:10px 14px;
         background:rgba(16,163,127,0.08);border:1px solid rgba(16,163,127,0.25);
         border-radius:10px;margin-bottom:12px;font-size:12px;color:var(--ac);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <span>Pre-filled from <strong>rr.txt</strong> — click <strong>Save All</strong> to store in database and make this the primary source.</span>
-      </div>`
-    : (hasDbData
-        ? `<div style="
-            display:flex;align-items:center;gap:10px;padding:8px 14px;
-            background:rgba(16,163,127,0.06);border:1px solid rgba(16,163,127,0.15);
-            border-radius:10px;margin-bottom:12px;font-size:12px;color:var(--tx-2);">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <span>Saved in database — chatbot uses this data directly.</span>
-          </div>`
-        : "");
+        Pre-filled from <strong style="margin:0 3px">rr.txt</strong> — click <strong style="margin:0 3px">Save All</strong> to store in database.
+      </div>`;
+  } else if (hasDbData) {
+    banner = `<div style="
+        display:flex;align-items:center;gap:10px;padding:8px 14px;
+        background:rgba(16,163,127,0.06);border:1px solid rgba(16,163,127,0.15);
+        border-radius:10px;margin-bottom:12px;font-size:12px;color:var(--tx-2);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Saved in database — chatbot uses this data directly.
+      </div>`;
+  }
 
-  let html = seedBanner + `<div class="tt-grid">`;
+  let html = banner + `<div class="tt-grid">`;
 
   for (let p = 1; p <= maxPeriod; p++) {
     const dbEntry = dbEntries.find(e => e.period === p);
-    // If DB has data, use it. If not, use seed data for this period.
-    const subject  = dbEntry ? dbEntry.subject : (seedSubjects[p-1] || "");
-    const entryId  = dbEntry ? dbEntry.id : "";
-
+    const subject = dbEntry ? dbEntry.subject : (seedSubjects[p-1] || "");
+    const entryId = dbEntry ? dbEntry.id : "";
     html += `
       <div class="tt-grid-row" data-period="${p}">
         <span class="tt-period-label">Period ${p}</span>
@@ -368,7 +355,7 @@ function renderGrid() {
                placeholder="Subject / empty to clear"
                data-period="${p}"
                data-entry-id="${entryId}" />
-        <button class="btn-icon danger tt-del-period" title="Remove period"
+        <button class="btn-icon danger" title="Remove period"
                 onclick="deletePeriodRow(${p})">${iconDelete()}</button>
       </div>`;
   }
@@ -379,7 +366,7 @@ function renderGrid() {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add Period
       </button>
-      <button class="btn btn-primary btn-sm" onclick="saveAllPeriods()">
+      <button class="btn btn-primary btn-sm" id="tt-save-btn" onclick="saveAllPeriods()">
         ${iconSave()} Save All
       </button>
     </div>`;
@@ -388,46 +375,40 @@ function renderGrid() {
 }
 
 function addPeriodRow() {
-  const grid = document.querySelector(".tt-grid");
+  const grid  = document.querySelector(".tt-grid");
   if (!grid) return;
-  const rows    = grid.querySelectorAll(".tt-grid-row");
-  const nextP   = rows.length + 1;
-  const div     = document.createElement("div");
+  const rows  = grid.querySelectorAll(".tt-grid-row");
+  const nextP = rows.length + 1;
+  const div   = document.createElement("div");
   div.className = "tt-grid-row";
   div.dataset.period = nextP;
   div.innerHTML = `
     <span class="tt-period-label">Period ${nextP}</span>
     <input class="tt-subject-input" type="text" value="" placeholder="Subject"
            data-period="${nextP}" data-entry-id="" />
-    <button class="btn-icon danger tt-del-period" title="Remove period"
+    <button class="btn-icon danger" title="Remove period"
             onclick="deletePeriodRow(${nextP})">${iconDelete()}</button>`;
   grid.appendChild(div);
+  div.querySelector("input").focus();
 }
 
 async function deletePeriodRow(period) {
   const entry = ttAllData.find(e =>
-    e.department === ttActiveDept &&
-    e.year       === ttActiveYear &&
-    e.day_order  === ttActiveDO   &&
-    e.period     === period
+    e.department === ttActiveDept && e.year === ttActiveYear &&
+    e.day_order  === ttActiveDO   && e.period === period
   );
   if (entry) {
     const res = await apiFetch(`/admin/timetable/${entry.id}`, { method: "DELETE" });
     if (!res || !res.ok) { alert("Failed to delete period."); return; }
+    ttAllData = ttAllData.filter(e => e.id !== entry.id);
   }
-  ttAllData = ttAllData.filter(e => !(
-    e.department === ttActiveDept &&
-    e.year       === ttActiveYear &&
-    e.day_order  === ttActiveDO   &&
-    e.period     === period
-  ));
+  // Just re-render; the DOM row was from the grid
   renderGrid();
 }
 
 async function saveAllPeriods() {
   const inputs = document.querySelectorAll(".tt-subject-input");
   const saves  = [];
-
   inputs.forEach(inp => {
     const period  = parseInt(inp.dataset.period);
     const subject = inp.value.trim();
@@ -437,8 +418,8 @@ async function saveAllPeriods() {
 
   if (saves.length === 0) { alert("Nothing to save — all fields are empty."); return; }
 
-  const saveBtn = document.querySelector(".tt-grid-actions .btn-primary");
-  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving…"; }
+  const saveBtn = document.getElementById("tt-save-btn");
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = iconSave() + " Saving…"; }
 
   const results = await Promise.all(saves.map(s =>
     apiFetch("/admin/timetable", {
@@ -453,30 +434,24 @@ async function saveAllPeriods() {
     })
   ));
 
-  // Flash feedback on inputs
-  const inputs2 = document.querySelectorAll(".tt-subject-input");
-  results.forEach((res, i) => {
-    if (!res) return;
-    const inp = [...inputs2].find(el => parseInt(el.dataset.period) === saves[i].period);
-    if (!inp) return;
-    inp.classList.add(res.ok ? "saved-ok" : "saved-err");
-    setTimeout(() => inp.classList.remove("saved-ok", "saved-err"), 1800);
-  });
+  let ok = 0, fail = 0;
+  results.forEach(r => r?.ok ? ok++ : fail++);
 
-  // Reload DB data
+  // Reload all data fresh
   const entriesRes = await apiFetch("/admin/timetable");
   if (entriesRes) ttAllData = await entriesRes.json();
 
-  // Re-render so banner updates (rr.txt → DB saved)
-  renderGrid();
+  renderDOSection(); // re-renders grid + DO counts
 
   if (saveBtn) {
     saveBtn.disabled = false;
     saveBtn.innerHTML = iconSave() + " Save All";
   }
+
+  if (fail > 0) alert(`Saved ${ok}, failed ${fail}.`);
 }
 
-// ── Seed ALL rr.txt data to DB in one click ────────────────
+// ── Seed ALL rr.txt data ────────────────────────────────────
 async function seedAllFromRR() {
   if (!confirm("This will save ALL rr.txt timetable data into the database for all departments/years/day orders. Existing entries will be overwritten. Continue?")) return;
 
@@ -489,19 +464,12 @@ async function seedAllFromRR() {
       for (const [doNum, subjects] of Object.entries(dayOrders)) {
         subjects.forEach((subject, idx) => {
           if (!subject.trim()) return;
-          allSaves.push({
-            department: dept,
-            year:       parseInt(year),
-            day_order:  parseInt(doNum),
-            period:     idx + 1,
-            subject:    subject.trim(),
-          });
+          allSaves.push({ department: dept, year: parseInt(year), day_order: parseInt(doNum), period: idx + 1, subject: subject.trim() });
         });
       }
     }
   }
 
-  // Batch in groups of 10 to avoid flooding
   const BATCH = 10;
   let saved = 0, failed = 0;
   for (let i = 0; i < allSaves.length; i += BATCH) {
@@ -513,11 +481,12 @@ async function seedAllFromRR() {
     if (btn) btn.textContent = `Seeding… (${saved}/${allSaves.length})`;
   }
 
-  // Reload
-  const entriesRes = await apiFetch("/admin/timetable");
+  const [entriesRes, deptsRes] = await Promise.all([
+    apiFetch("/admin/timetable"),
+    apiFetch("/admin/timetable/departments"),
+  ]);
   if (entriesRes) ttAllData = await entriesRes.json();
-  const deptsRes = await apiFetch("/admin/timetable/departments");
-  if (deptsRes) ttDepts = await deptsRes.json();
+  if (deptsRes)   ttDepts   = await deptsRes.json();
 
   if (btn) { btn.disabled = false; btn.textContent = "Seed from rr.txt"; }
   alert(`✅ Done! Saved ${saved} periods${failed ? `, ${failed} failed` : ""} to database.`);
@@ -528,6 +497,7 @@ async function seedAllFromRR() {
 function openAddDeptModal() {
   document.getElementById("new-dept-name").value = "";
   document.getElementById("add-dept-modal").classList.add("open");
+  setTimeout(() => document.getElementById("new-dept-name").focus(), 80);
 }
 function closeAddDeptModal() { document.getElementById("add-dept-modal").classList.remove("open"); }
 
@@ -535,9 +505,12 @@ async function saveNewDept() {
   const name = document.getElementById("new-dept-name").value.trim();
   if (!name) { alert("Please enter a degree name."); return; }
   if (ttDepts.includes(name)) { alert("Degree already exists."); return; }
+
+  // We add it to the local list; it only appears in the DB after you save timetable entries
   ttDepts.push(name);
   ttActiveDept = name;
-  ttActiveYear = 1;
+  ttActiveYear = null;
+  ttActiveDO   = 1;
   closeAddDeptModal();
   renderDeptBar();
 }
@@ -546,22 +519,43 @@ async function saveNewDept() {
 function openAddYearModal() {
   document.getElementById("new-year-num").value = "";
   document.getElementById("add-year-modal").classList.add("open");
+  setTimeout(() => document.getElementById("new-year-num").focus(), 80);
 }
 function closeAddYearModal() { document.getElementById("add-year-modal").classList.remove("open"); }
 
 async function saveNewYear() {
-  const y = parseInt(document.getElementById("new-year-num").value);
-  if (!y || y < 1) { alert("Please enter a valid year number."); return; }
+  const raw = document.getElementById("new-year-num").value.trim();
+  const y   = parseInt(raw);
+  if (!y || y < 1 || y > 10) { alert("Please enter a valid year number (1–10)."); return; }
 
-  const existingYears = [...new Set(
-    ttAllData.filter(e => e.department === ttActiveDept).map(e => e.year)
-  )];
-  const seedYears = RR_SEED[ttActiveDept] ? Object.keys(RR_SEED[ttActiveDept]).map(Number) : [];
-  if ([...existingYears, ...seedYears].includes(y)) { alert(`Year ${y} already exists.`); return; }
+  const existingYears = getYearsForDept(ttActiveDept);
+  if (existingYears.includes(y)) { alert(`Year ${y} already exists for this degree.`); return; }
 
+  // Year is virtual until at least one period is saved to DB for it
   ttActiveYear = y;
+  ttActiveDO   = 1;
   closeAddYearModal();
-  renderYearTabs();
+
+  // Force the year section to include this new year by temporarily injecting into ttAllData
+  // We use a sentinel placeholder entry with an impossible id so we can clean up later
+  // Instead, we just re-render with the year in scope by patching getYearsForDept via a local set
+  _pendingYears[ttActiveDept] = _pendingYears[ttActiveDept] || new Set();
+  _pendingYears[ttActiveDept].add(y);
+
+  renderYearSection();
+}
+
+// Holds newly-added years that haven't been saved to DB yet (no entries exist)
+const _pendingYears = {};
+
+// Patch getYearsForDept to also include pending years
+const _origGetYears = getYearsForDept;
+// Override inline (simpler than prototype):
+function getYearsForDept(dept) {
+  const dbYears   = [...new Set(ttAllData.filter(e => e.department === dept).map(e => e.year))];
+  const seedYears = RR_SEED[dept] ? Object.keys(RR_SEED[dept]).map(Number) : [];
+  const pending   = _pendingYears[dept] ? [..._pendingYears[dept]] : [];
+  return [...new Set([...dbYears, ...seedYears, ...pending])].sort((a,b) => a-b);
 }
 
 // ── Delete degree ──────────────────────────────────────────
@@ -572,21 +566,26 @@ async function deleteDept(e, dept) {
   if (!res || !res.ok) { alert("Delete failed."); return; }
   ttDepts   = ttDepts.filter(d => d !== dept);
   ttAllData = ttAllData.filter(e => e.department !== dept);
-  if (ttActiveDept === dept) ttActiveDept = ttDepts[0] || null;
+  delete _pendingYears[dept];
+  if (ttActiveDept === dept) { ttActiveDept = ttDepts[0] || null; ttActiveYear = null; }
   renderDeptBar();
 }
 
 // ── Delete year ────────────────────────────────────────────
 async function deleteYear(e, year) {
   e.stopPropagation();
-  if (!confirm(`Delete ALL entries for Year ${year} in ${ttActiveDept}?`)) return;
+  if (!confirm(`Delete ALL entries for Year ${year} in "${ttActiveDept}"?`)) return;
   const toDelete = ttAllData.filter(e => e.department === ttActiveDept && e.year === year);
-  await Promise.all(toDelete.map(entry =>
-    apiFetch(`/admin/timetable/${entry.id}`, { method: "DELETE" })
-  ));
-  ttAllData = ttAllData.filter(e => !(e.department === ttActiveDept && e.year === year));
+  if (toDelete.length > 0) {
+    await Promise.all(toDelete.map(entry =>
+      apiFetch(`/admin/timetable/${entry.id}`, { method: "DELETE" })
+    ));
+    ttAllData = ttAllData.filter(e => !(e.department === ttActiveDept && e.year === year));
+  }
+  // Also remove from pending
+  if (_pendingYears[ttActiveDept]) _pendingYears[ttActiveDept].delete(year);
   if (ttActiveYear === year) ttActiveYear = null;
-  renderYearTabs();
+  renderYearSection();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -722,8 +721,7 @@ function filterStudents() {
 // ════════════════════════════════════════════════════════════
 
 function confirmDelete(type, id, label) {
-  document.getElementById("confirm-msg").textContent =
-    `Delete "${label}"? This cannot be undone.`;
+  document.getElementById("confirm-msg").textContent = `Delete "${label}"? This cannot be undone.`;
   const okBtn = document.getElementById("confirm-ok");
   const newBtn = okBtn.cloneNode(true);
   okBtn.parentNode.replaceChild(newBtn, okBtn);
