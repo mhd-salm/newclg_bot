@@ -7,6 +7,166 @@
   <title>Admin Panel — Campus AI</title>
   <link rel="icon" href="clg_logo.png" type="image/png" />
   <link rel="stylesheet" href="admin.css" />
+  <style>
+    /* ── Timetable specific styles ── */
+    .tt-dept-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .tt-dept-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--bg-3);
+      color: var(--tx-2);
+      border: 1px solid var(--bd);
+      cursor: pointer;
+      transition: 0.14s;
+    }
+    .tt-dept-pill:hover { background: var(--bg-4); color: var(--tx); }
+    .tt-dept-pill.active { background: var(--ac-dim); color: var(--ac); border-color: var(--ac); }
+    .tt-dept-pill.add-pill { color: var(--tx-3); border-style: dashed; }
+    .tt-dept-pill.add-pill:hover { color: var(--ac); border-color: var(--ac); }
+
+    .tt-dept-del {
+      font-size: 15px;
+      line-height: 1;
+      color: currentColor;
+      opacity: 0.5;
+      padding: 0 2px;
+      border-radius: 4px;
+      transition: opacity 0.14s;
+    }
+    .tt-dept-del:hover { opacity: 1; color: var(--red); }
+
+    .tt-year-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .tt-year-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--bg-3);
+      color: var(--tx-2);
+      border: 1px solid var(--bd);
+      cursor: pointer;
+      transition: 0.14s;
+    }
+    .tt-year-pill:hover { background: var(--bg-4); color: var(--tx); }
+    .tt-year-pill.active { background: var(--ac-dim); color: var(--ac); border-color: var(--ac); }
+    .tt-year-pill.add-pill { color: var(--tx-3); border-style: dashed; }
+    .tt-year-pill.add-pill:hover { color: var(--ac); border-color: var(--ac); }
+
+    .tt-year-del {
+      font-size: 14px;
+      opacity: 0.5;
+      transition: opacity 0.14s;
+    }
+    .tt-year-del:hover { opacity: 1; color: var(--red); }
+
+    .tt-do-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .tt-do-pill {
+      padding: 6px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--bg-3);
+      color: var(--tx-2);
+      border: 1px solid var(--bd);
+      cursor: pointer;
+      transition: 0.14s;
+    }
+    .tt-do-pill:hover { background: var(--bg-4); color: var(--tx); }
+    .tt-do-pill.active { background: var(--ac-dim); color: var(--ac); border-color: var(--ac); }
+
+    .tt-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tt-grid-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--bg-2);
+      border: 1px solid var(--bd);
+      border-radius: 10px;
+      transition: border-color 0.14s;
+    }
+    .tt-grid-row:hover { border-color: var(--bd-hover); }
+
+    .tt-period-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--tx-3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      width: 68px;
+      flex-shrink: 0;
+    }
+
+    .tt-subject-input {
+      flex: 1;
+      background: var(--bg-3);
+      border: 1px solid var(--bd);
+      color: var(--tx);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.14s, box-shadow 0.14s;
+    }
+    .tt-subject-input:focus { border-color: var(--ac); box-shadow: 0 0 0 2px var(--ac-dim); }
+    .tt-subject-input.saved-ok { border-color: var(--ac); background: rgba(16,163,127,0.08); }
+    .tt-subject-input.saved-err { border-color: var(--red); background: rgba(239,68,68,0.08); }
+
+    .tt-grid-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding-top: 4px;
+    }
+
+    #tt-year-section {
+      background: var(--bg-2);
+      border: 1px solid var(--bd);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    #tt-do-section {
+      margin-top: 16px;
+    }
+
+    #tt-grid-section {
+      margin-top: 4px;
+    }
+  </style>
 </head>
 <body>
 
@@ -51,7 +211,6 @@
   <!-- ── MAIN ── -->
   <main class="main-content">
 
-    <!-- Mobile header -->
     <header class="mobile-header">
       <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
         <span></span><span></span><span></span>
@@ -59,96 +218,46 @@
       <span>Campus AI Admin</span>
     </header>
 
-    <!-- ══════════════════════════════════
-         TAB: DAY ORDERS
-    ══════════════════════════════════ -->
+    <!-- ══════════════ DAY ORDERS ══════════════ -->
     <section class="tab-panel active" id="tab-day-orders">
       <div class="panel-header">
         <div>
           <h1 class="panel-title">Day Order Overrides</h1>
-          <p class="panel-sub">Override the day order for any date — set it to Holiday (0) or a specific order (1–6).</p>
+          <p class="panel-sub">Override the day order for any date.</p>
         </div>
         <button class="btn btn-primary" onclick="openDOModal()">+ Add Override</button>
       </div>
-
       <div class="card">
         <div class="card-body">
           <div id="do-loading" class="loading-row">Loading...</div>
           <table class="data-table" id="do-table" style="display:none;">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Day</th>
-                <th>Day Order</th>
-                <th>Reason</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Date</th><th>Day</th><th>Day Order</th><th>Reason</th><th>Actions</th></tr></thead>
             <tbody id="do-tbody"></tbody>
           </table>
-          <div id="do-empty" class="empty-state" style="display:none;">
-            No overrides yet. The system uses the default calendar from rr.txt.
-          </div>
+          <div id="do-empty" class="empty-state" style="display:none;">No overrides yet.</div>
         </div>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════
-         TAB: TIMETABLE
-    ══════════════════════════════════ -->
+    <!-- ══════════════ TIMETABLE ══════════════ -->
     <section class="tab-panel" id="tab-timetable">
       <div class="panel-header">
         <div>
           <h1 class="panel-title">Timetable Editor</h1>
-          <p class="panel-sub">Edit subjects per Year × Day Order × Period. DB entries override rr.txt.</p>
-        </div>
-        <button class="btn btn-primary" onclick="openTTModal()">+ Add / Edit Slot</button>
-      </div>
-
-      <!-- Filters -->
-      <div class="filter-bar">
-        <label>Year
-          <select id="tt-filter-year" onchange="renderTimetable()">
-            <option value="1">Year 1</option>
-            <option value="2">Year 2</option>
-            <option value="3">Year 3</option>
-          </select>
-        </label>
-        <label>Day Order
-          <select id="tt-filter-do" onchange="renderTimetable()">
-            <option value="1">I</option>
-            <option value="2">II</option>
-            <option value="3">III</option>
-            <option value="4">IV</option>
-            <option value="5">V</option>
-            <option value="6">VI</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="card">
-        <div class="card-body">
-          <div id="tt-loading" class="loading-row">Loading...</div>
-          <table class="data-table" id="tt-table" style="display:none;">
-            <thead>
-              <tr>
-                <th>Period</th>
-                <th>Subject</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="tt-tbody"></tbody>
-          </table>
-          <div id="tt-empty" class="empty-state" style="display:none;">
-            No DB entries for this filter — the chatbot uses rr.txt for this combination.
-          </div>
+          <p class="panel-sub">Manage timetables by degree, year, and day order. Click a cell to edit, then Save All.</p>
         </div>
       </div>
+
+      <!-- Degree pills -->
+      <div id="tt-dept-bar" class="tt-dept-bar">
+        <div class="loading-row">Loading...</div>
+      </div>
+
+      <!-- Year + DO + Grid — all rendered by JS -->
+      <div id="tt-year-section"></div>
     </section>
 
-    <!-- ══════════════════════════════════
-         TAB: ANNOUNCEMENTS
-    ══════════════════════════════════ -->
+    <!-- ══════════════ ANNOUNCEMENTS ══════════════ -->
     <section class="tab-panel" id="tab-announcements">
       <div class="panel-header">
         <div>
@@ -157,7 +266,6 @@
         </div>
         <button class="btn btn-primary" onclick="openAnnModal()">+ New Announcement</button>
       </div>
-
       <div class="card">
         <div class="card-body">
           <div id="ann-loading" class="loading-row">Loading...</div>
@@ -167,31 +275,21 @@
       </div>
     </section>
 
-    <!-- ══════════════════════════════════
-         TAB: STUDENTS
-    ══════════════════════════════════ -->
+    <!-- ══════════════ STUDENTS ══════════════ -->
     <section class="tab-panel" id="tab-students">
       <div class="panel-header">
         <div>
           <h1 class="panel-title">Registered Students</h1>
           <p class="panel-sub">All students who have created an account.</p>
         </div>
-        <input type="search" class="search-input" id="student-search" placeholder="Search by name or reg. no…" oninput="filterStudents()" />
+        <input type="search" class="search-input" id="student-search"
+               placeholder="Search by name or reg. no…" oninput="filterStudents()" />
       </div>
-
       <div class="card">
         <div class="card-body">
           <div id="stu-loading" class="loading-row">Loading...</div>
           <table class="data-table" id="stu-table" style="display:none;">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Reg. No.</th>
-                <th>Department</th>
-                <th>Year</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Name</th><th>Reg. No.</th><th>Department</th><th>Year</th><th>Actions</th></tr></thead>
             <tbody id="stu-tbody"></tbody>
           </table>
           <div id="stu-empty" class="empty-state" style="display:none;">No students found.</div>
@@ -199,11 +297,11 @@
       </div>
     </section>
 
-  </main><!-- /main-content -->
+  </main>
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════
        MODALS
-  ══════════════════════════════════════════════════════════ -->
+  ══════════════════════════════════════════ -->
 
   <!-- Day Order Modal -->
   <div class="modal-overlay" id="do-modal">
@@ -217,12 +315,9 @@
         <label>Day Order
           <select id="do-value">
             <option value="0">0 — Holiday (no classes)</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
+            <option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option>
+            <option value="5">5</option><option value="6">6</option>
           </select>
         </label>
         <label>Reason (optional) <input type="text" id="do-reason" placeholder="e.g. Unexpected holiday" /></label>
@@ -234,40 +329,40 @@
     </div>
   </div>
 
-  <!-- Timetable Modal -->
-  <div class="modal-overlay" id="tt-modal">
-    <div class="modal">
+  <!-- Add Degree Modal -->
+  <div class="modal-overlay" id="add-dept-modal">
+    <div class="modal modal-sm">
       <div class="modal-header">
-        <h2>Edit Timetable Slot</h2>
-        <button class="modal-close" onclick="closeTTModal()">✕</button>
+        <h2>Add Degree</h2>
+        <button class="modal-close" onclick="closeAddDeptModal()">✕</button>
       </div>
       <div class="modal-body">
-        <label>Year
-          <select id="tt-year">
-            <option value="1">Year 1</option>
-            <option value="2">Year 2</option>
-            <option value="3">Year 3</option>
-          </select>
+        <label>Degree Name
+          <input type="text" id="new-dept-name" placeholder="e.g. B.Sc AI, B.Com, B.Sc CS" />
         </label>
-        <label>Day Order
-          <select id="tt-do">
-            <option value="1">I</option><option value="2">II</option>
-            <option value="3">III</option><option value="4">IV</option>
-            <option value="5">V</option><option value="6">VI</option>
-          </select>
-        </label>
-        <label>Period
-          <select id="tt-period">
-            <option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-        </label>
-        <label>Subject <input type="text" id="tt-subject" placeholder="e.g. Python Theory (JM)" /></label>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="closeTTModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveTimetableSlot()">Save</button>
+        <button class="btn btn-ghost" onclick="closeAddDeptModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveNewDept()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Year Modal -->
+  <div class="modal-overlay" id="add-year-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2>Add Year</h2>
+        <button class="modal-close" onclick="closeAddYearModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <label>Year Number
+          <input type="number" id="new-year-num" placeholder="e.g. 1, 2, 3" min="1" max="10" />
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeAddYearModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveNewYear()">Add</button>
       </div>
     </div>
   </div>
@@ -309,8 +404,8 @@
         <p id="confirm-msg">Are you sure?</p>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost"   onclick="closeConfirm()">Cancel</button>
-        <button class="btn btn-danger"  id="confirm-ok">Delete</button>
+        <button class="btn btn-ghost"  onclick="closeConfirm()">Cancel</button>
+        <button class="btn btn-danger" id="confirm-ok">Delete</button>
       </div>
     </div>
   </div>
