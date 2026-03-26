@@ -66,6 +66,40 @@ function escHtml(str) {
 function todayISO() { return new Date().toISOString().slice(0,10); }
 
 // ════════════════════════════════════════════════════════════
+//  RR.TXT SEED DATA  — pre-populate UI so admin can save to DB
+//  Once saved to DB, the chatbot uses DB and rr.txt is fallback
+// ════════════════════════════════════════════════════════════
+
+const RR_SEED = {
+  "B.Sc AI": {
+    1: {
+      1: ["Allied", "English", "Python Theory (JM)", "Python Lab (JM, JAK)", "Language"],
+      2: ["Allied", "Python Theory (JM)", "Language", "Python Lab (JM, MMA)", "Soft Skills"],
+      3: ["Python Lab (JM, JAK)", "Python Lab (JM, JAK)", "English", "Language", "Allied"],
+      4: ["Python Lab (JM)", "Python Lab (JM)", "Allied", "English", "Language"],
+      5: ["English", "Language", "Python Theory (JM)", "EVS (JM)", "Allied"],
+      6: ["VBE", "English", "Python Theory (JM)", "Allied", "Python Theory (JM)"],
+    },
+    2: {
+      1: ["Language", "English", "Allied", "IAI Theory (MGR)", "Prolog Lab (MGR)"],
+      2: ["IAI Theory (MGR)", "Allied", "IAI Theory (MGR)", "English", "Language"],
+      3: ["Language", "Allied", "IAI Theory (MGR)", "Prolog Lab (MGR, JAK)", "English"],
+      4: ["Allied", "Language", "English", "Prolog Lab (MGR)", "Prolog Lab (MGR)"],
+      5: ["English", "Prolog Lab (MGR, JAK)", "Prolog Lab (MGR, JAK)", "Allied", "Language"],
+      6: ["IAI Theory (MGR)", "English", "NME (JAK)", "Language", "Allied"],
+    },
+    3: {
+      1: ["ML Lab (MMA, SHM)", "ML Lab (MMA, SHM)", "CC Theory (MGR)", "ML Theory (MMA)", "IS Theory (JAK)"],
+      2: ["Mini Project (JAK, JM(1), MGR(2))", "Mini Project (JAK, JM(1), MGR(2))", "ML Theory (MMA)", "CC Theory (MGR)", "IoT Theory (FMI)"],
+      3: ["CC Theory (MMA)", "IS Theory (SHM)", "ML Lab (MMA, JM)", "ML Theory (MMA)", "IoT Theory (FMI)"],
+      4: ["CC Theory (MMA)", "IS Theory (SHM)", "Mini Project (MGR, JM)", "ML Theory (MMA)", "IoT Theory (JAK)"],
+      5: ["CC Theory (MMA)", "IS Theory (SHM)", "ML Theory (MMA)", "Mini Project (FMI, MMA)", "Mini Project (FMI, MMA)"],
+      6: ["ML Lab (MMA, JM(1), SHM(2))", "ML Lab (MMA, JM(1), SHM(2))", "IS Theory (MGR)", "IoT Theory (JAK)", "IoT Theory (FMI)"],
+    },
+  },
+};
+
+// ════════════════════════════════════════════════════════════
 //  DAY ORDERS
 // ════════════════════════════════════════════════════════════
 
@@ -145,24 +179,45 @@ const ROMAN = ["","I","II","III","IV","V","VI"];
 
 async function initTimetable() {
   ttLoaded = true;
+
+  // Show a loading state in the dept bar
+  document.getElementById("tt-dept-bar").innerHTML =
+    `<div class="loading-row" style="padding:16px 0">Loading timetable data…</div>`;
+
   await loadAllTimetableData();
   renderDeptBar();
 }
 
 async function loadAllTimetableData() {
-  const [entriesRes, deptsRes] = await Promise.all([
-    apiFetch("/admin/timetable"),
-    apiFetch("/admin/timetable/departments"),
-  ]);
-  if (!entriesRes || !deptsRes) return;
-  ttAllData = await entriesRes.json();
-  ttDepts   = await deptsRes.json();
+  try {
+    const [entriesRes, deptsRes] = await Promise.all([
+      apiFetch("/admin/timetable"),
+      apiFetch("/admin/timetable/departments"),
+    ]);
+    if (!entriesRes || !deptsRes) return;
+
+    ttAllData = await entriesRes.json();
+    ttDepts   = await deptsRes.json();
+
+    // If no departments in DB yet, seed from RR_SEED keys
+    if (ttDepts.length === 0) {
+      ttDepts = Object.keys(RR_SEED);
+    }
+  } catch(e) {
+    console.error("Failed to load timetable data:", e);
+    // Fallback to seed data
+    ttDepts = Object.keys(RR_SEED);
+  }
 }
 
 // ── Degree bar ─────────────────────────────────────────────
 function renderDeptBar() {
   const bar = document.getElementById("tt-dept-bar");
-  bar.innerHTML = "";
+  bar.innerHTML = "";   // ← FIX: always clear the loading spinner first
+
+  if (ttDepts.length === 0 && Object.keys(RR_SEED).length === 0) {
+    bar.innerHTML = `<div class="empty-state" style="padding:0">No degrees yet. Click <strong>+ Add Degree</strong> to get started.</div>`;
+  }
 
   ttDepts.forEach(dept => {
     const btn = document.createElement("button");
@@ -180,7 +235,7 @@ function renderDeptBar() {
   addBtn.onclick = openAddDeptModal;
   bar.appendChild(addBtn);
 
-  // If no active dept pick first
+  // Pick first dept if none active
   if (!ttActiveDept && ttDepts.length > 0) {
     ttActiveDept = ttDepts[0];
   }
@@ -203,10 +258,18 @@ function selectDept(dept) {
 function renderYearTabs() {
   const section = document.getElementById("tt-year-section");
 
-  // Get years for this dept
-  const years = [...new Set(
+  // Get years from DB entries for this dept
+  const dbYears = [...new Set(
     ttAllData.filter(e => e.department === ttActiveDept).map(e => e.year)
-  )].sort((a,b) => a-b);
+  )];
+
+  // Also pull years from seed data if dept is in seed
+  const seedYears = RR_SEED[ttActiveDept]
+    ? Object.keys(RR_SEED[ttActiveDept]).map(Number)
+    : [];
+
+  // Merge and sort
+  const years = [...new Set([...dbYears, ...seedYears])].sort((a,b) => a-b);
 
   if (!ttActiveYear || !years.includes(ttActiveYear)) {
     ttActiveYear = years[0] || null;
@@ -254,21 +317,49 @@ function selectDO(n) {
 function renderGrid() {
   const container = document.getElementById("tt-grid-section");
 
-  const entries = ttAllData.filter(e =>
+  // DB entries for this combination
+  const dbEntries = ttAllData.filter(e =>
     e.department === ttActiveDept &&
     e.year       === ttActiveYear &&
     e.day_order  === ttActiveDO
   ).sort((a,b) => a.period - b.period);
 
-  // Determine max period (at least 5)
-  const maxPeriod = Math.max(5, ...entries.map(e => e.period));
+  // Seed entries for this combination (only if no DB entries exist)
+  const seedSubjects = (RR_SEED[ttActiveDept]?.[ttActiveYear]?.[ttActiveDO]) || [];
+  const hasDbData    = dbEntries.length > 0;
 
-  let html = `<div class="tt-grid">`;
+  // Build period list: prefer DB, fall back to seed
+  const maxPeriod = hasDbData
+    ? Math.max(5, ...dbEntries.map(e => e.period))
+    : Math.max(5, seedSubjects.length);
+
+  // Show an info banner if we're showing seed/fallback data
+  const seedBanner = (!hasDbData && seedSubjects.length > 0)
+    ? `<div style="
+        display:flex;align-items:center;gap:10px;padding:10px 14px;
+        background:rgba(16,163,127,0.08);border:1px solid rgba(16,163,127,0.25);
+        border-radius:10px;margin-bottom:12px;font-size:12px;color:var(--ac);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Pre-filled from <strong>rr.txt</strong> — click <strong>Save All</strong> to store in database and make this the primary source.</span>
+      </div>`
+    : (hasDbData
+        ? `<div style="
+            display:flex;align-items:center;gap:10px;padding:8px 14px;
+            background:rgba(16,163,127,0.06);border:1px solid rgba(16,163,127,0.15);
+            border-radius:10px;margin-bottom:12px;font-size:12px;color:var(--tx-2);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span>Saved in database — chatbot uses this data directly.</span>
+          </div>`
+        : "");
+
+  let html = seedBanner + `<div class="tt-grid">`;
 
   for (let p = 1; p <= maxPeriod; p++) {
-    const entry   = entries.find(e => e.period === p);
-    const subject = entry ? entry.subject : "";
-    const entryId = entry ? entry.id : "";
+    const dbEntry = dbEntries.find(e => e.period === p);
+    // If DB has data, use it. If not, use seed data for this period.
+    const subject  = dbEntry ? dbEntry.subject : (seedSubjects[p-1] || "");
+    const entryId  = dbEntry ? dbEntry.id : "";
+
     html += `
       <div class="tt-grid-row" data-period="${p}">
         <span class="tt-period-label">Period ${p}</span>
@@ -289,8 +380,7 @@ function renderGrid() {
         Add Period
       </button>
       <button class="btn btn-primary btn-sm" onclick="saveAllPeriods()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13"/><polyline points="7 3 7 8 15 8"/></svg>
-        Save All
+        ${iconSave()} Save All
       </button>
     </div>`;
 
@@ -300,10 +390,10 @@ function renderGrid() {
 function addPeriodRow() {
   const grid = document.querySelector(".tt-grid");
   if (!grid) return;
-  const rows     = grid.querySelectorAll(".tt-grid-row");
-  const nextP    = rows.length + 1;
-  const div      = document.createElement("div");
-  div.className  = "tt-grid-row";
+  const rows    = grid.querySelectorAll(".tt-grid-row");
+  const nextP   = rows.length + 1;
+  const div     = document.createElement("div");
+  div.className = "tt-grid-row";
   div.dataset.period = nextP;
   div.innerHTML = `
     <span class="tt-period-label">Period ${nextP}</span>
@@ -315,7 +405,6 @@ function addPeriodRow() {
 }
 
 async function deletePeriodRow(period) {
-  // Find entry in DB and delete if exists
   const entry = ttAllData.find(e =>
     e.department === ttActiveDept &&
     e.year       === ttActiveYear &&
@@ -326,7 +415,6 @@ async function deletePeriodRow(period) {
     const res = await apiFetch(`/admin/timetable/${entry.id}`, { method: "DELETE" });
     if (!res || !res.ok) { alert("Failed to delete period."); return; }
   }
-  // Remove from local data and re-render
   ttAllData = ttAllData.filter(e => !(
     e.department === ttActiveDept &&
     e.year       === ttActiveYear &&
@@ -343,7 +431,7 @@ async function saveAllPeriods() {
   inputs.forEach(inp => {
     const period  = parseInt(inp.dataset.period);
     const subject = inp.value.trim();
-    if (!subject) return; // skip empty
+    if (!subject) return;
     saves.push({ period, subject });
   });
 
@@ -365,7 +453,7 @@ async function saveAllPeriods() {
     })
   ));
 
-  // Flash feedback
+  // Flash feedback on inputs
   const inputs2 = document.querySelectorAll(".tt-subject-input");
   results.forEach((res, i) => {
     if (!res) return;
@@ -375,11 +463,65 @@ async function saveAllPeriods() {
     setTimeout(() => inp.classList.remove("saved-ok", "saved-err"), 1800);
   });
 
-  // Reload local data
+  // Reload DB data
   const entriesRes = await apiFetch("/admin/timetable");
   if (entriesRes) ttAllData = await entriesRes.json();
 
-  if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13"/><polyline points="7 3 7 8 15 8"/></svg> Save All`; }
+  // Re-render so banner updates (rr.txt → DB saved)
+  renderGrid();
+
+  if (saveBtn) {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = iconSave() + " Save All";
+  }
+}
+
+// ── Seed ALL rr.txt data to DB in one click ────────────────
+async function seedAllFromRR() {
+  if (!confirm("This will save ALL rr.txt timetable data into the database for all departments/years/day orders. Existing entries will be overwritten. Continue?")) return;
+
+  const btn = document.getElementById("seed-all-btn");
+  if (btn) { btn.disabled = true; btn.textContent = "Seeding…"; }
+
+  const allSaves = [];
+  for (const [dept, years] of Object.entries(RR_SEED)) {
+    for (const [year, dayOrders] of Object.entries(years)) {
+      for (const [doNum, subjects] of Object.entries(dayOrders)) {
+        subjects.forEach((subject, idx) => {
+          if (!subject.trim()) return;
+          allSaves.push({
+            department: dept,
+            year:       parseInt(year),
+            day_order:  parseInt(doNum),
+            period:     idx + 1,
+            subject:    subject.trim(),
+          });
+        });
+      }
+    }
+  }
+
+  // Batch in groups of 10 to avoid flooding
+  const BATCH = 10;
+  let saved = 0, failed = 0;
+  for (let i = 0; i < allSaves.length; i += BATCH) {
+    const batch = allSaves.slice(i, i + BATCH);
+    const results = await Promise.all(batch.map(s =>
+      apiFetch("/admin/timetable", { method: "POST", body: JSON.stringify(s) })
+    ));
+    results.forEach(r => r?.ok ? saved++ : failed++);
+    if (btn) btn.textContent = `Seeding… (${saved}/${allSaves.length})`;
+  }
+
+  // Reload
+  const entriesRes = await apiFetch("/admin/timetable");
+  if (entriesRes) ttAllData = await entriesRes.json();
+  const deptsRes = await apiFetch("/admin/timetable/departments");
+  if (deptsRes) ttDepts = await deptsRes.json();
+
+  if (btn) { btn.disabled = false; btn.textContent = "Seed from rr.txt"; }
+  alert(`✅ Done! Saved ${saved} periods${failed ? `, ${failed} failed` : ""} to database.`);
+  renderDeptBar();
 }
 
 // ── Add Degree modal ───────────────────────────────────────
@@ -393,9 +535,6 @@ async function saveNewDept() {
   const name = document.getElementById("new-dept-name").value.trim();
   if (!name) { alert("Please enter a degree name."); return; }
   if (ttDepts.includes(name)) { alert("Degree already exists."); return; }
-
-  // Create a placeholder entry so the dept appears (period 0 trick — save year 1, DO 1, period 1, empty subject placeholder then delete)
-  // Better: just add to local list and let admin fill periods
   ttDepts.push(name);
   ttActiveDept = name;
   ttActiveYear = 1;
@@ -417,7 +556,8 @@ async function saveNewYear() {
   const existingYears = [...new Set(
     ttAllData.filter(e => e.department === ttActiveDept).map(e => e.year)
   )];
-  if (existingYears.includes(y)) { alert(`Year ${y} already exists.`); return; }
+  const seedYears = RR_SEED[ttActiveDept] ? Object.keys(RR_SEED[ttActiveDept]).map(Number) : [];
+  if ([...existingYears, ...seedYears].includes(y)) { alert(`Year ${y} already exists.`); return; }
 
   ttActiveYear = y;
   closeAddYearModal();
@@ -616,6 +756,9 @@ function iconEdit() {
 }
 function iconDelete() {
   return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+}
+function iconSave() {
+  return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13"/><polyline points="7 3 7 8 15 8"/></svg>`;
 }
 
 // ── Close modals on overlay click ──────────────────────────
