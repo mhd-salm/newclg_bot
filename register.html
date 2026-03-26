@@ -3,80 +3,220 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" id="theme-color-meta" content="#212121" />
-  <title>Create Account - Campus AI</title>
+  <meta name="theme-color" id="theme-color-meta" content="#111111" />
+  <title>Campus AI — Create Account</title>
   <link rel="icon" href="clg_logo.png" type="image/png" />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="auth.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    :root {
+      --bg: #111111; --surface: #1a1a1a; --surf2: #222222;
+      --bd: rgba(255,255,255,0.08); --bd2: rgba(255,255,255,0.14);
+      --tx: #f0f0f0; --tx2: #888; --tx3: #555;
+      --ac: #10a37f; --ac-h: #0d8f6e; --ac-glow: rgba(16,163,127,0.22);
+      --red: #ef4444; --r: 12px;
+    }
+    [data-theme="light"] {
+      --bg: #f4f4f5; --surface: #ffffff; --surf2: #f0f0f1;
+      --bd: rgba(0,0,0,0.08); --bd2: rgba(0,0,0,0.14);
+      --tx: #111; --tx2: #666; --tx3: #aaa;
+    }
+    body { font-family: 'Sora', system-ui, sans-serif; background: var(--bg); color: var(--tx); display: flex; flex-direction: column; min-height: 100dvh; -webkit-font-smoothing: antialiased; }
+    button { cursor: pointer; font-family: inherit; border: none; background: none; }
+    a { color: var(--ac); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .topbar { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--bd); }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+    .brand img { width: 28px; height: 28px; border-radius: 8px; object-fit: cover; }
+    .theme-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--tx2); }
+
+    .tog { cursor: pointer; }
+    .tog input { display: none; }
+    .tog-track { width: 38px; height: 20px; border-radius: 999px; background: var(--surf2); border: 1px solid var(--bd2); position: relative; display: block; transition: background 0.18s; }
+    .tog-thumb { width: 14px; height: 14px; border-radius: 999px; background: var(--tx3); position: absolute; top: 2px; left: 2px; transition: transform 0.18s, background 0.18s; }
+    .tog input:checked + .tog-track { background: var(--ac); border-color: var(--ac); }
+    .tog input:checked + .tog-track .tog-thumb { transform: translateX(18px); background: #fff; }
+
+    .page { flex: 1; display: grid; place-items: center; padding: 28px 16px; }
+
+    .card { width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--bd); border-radius: 20px; padding: 28px 28px 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.35); animation: rise 0.28s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    .card-title { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
+    .card-sub { font-size: 13px; color: var(--tx2); margin-bottom: 22px; }
+
+    .form { display: flex; flex-direction: column; gap: 12px; }
+    .field { position: relative; }
+    .field-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--tx3); display: flex; align-items: center; pointer-events: none; }
+    .field input { width: 100%; background: var(--surf2); border: 1px solid var(--bd); color: var(--tx); border-radius: var(--r); height: 46px; padding: 0 14px 0 40px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.18s, box-shadow 0.18s; }
+    .field input:focus { border-color: var(--ac); box-shadow: 0 0 0 3px var(--ac-glow); }
+    .field input::placeholder { color: var(--tx3); }
+
+    /* Year select styled like input */
+    .field select { width: 100%; background: var(--surf2); border: 1px solid var(--bd); color: var(--tx); border-radius: var(--r); height: 46px; padding: 0 14px 0 40px; font-size: 14px; font-family: inherit; outline: none; appearance: none; transition: border-color 0.18s, box-shadow 0.18s; cursor: pointer; }
+    .field select:focus { border-color: var(--ac); box-shadow: 0 0 0 3px var(--ac-glow); }
+    .field select option { background: var(--surface); color: var(--tx); }
+
+    .submit-btn { width: 100%; height: 46px; background: var(--ac); color: #fff; border-radius: var(--r); font-size: 14px; font-weight: 600; letter-spacing: 0.02em; transition: background 0.18s, transform 0.12s, box-shadow 0.18s; margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .submit-btn:hover { background: var(--ac-h); box-shadow: 0 6px 20px var(--ac-glow); }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.6; pointer-events: none; }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+    .submit-btn.loading .spinner { display: block; }
+    .submit-btn.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg { font-size: 12px; color: var(--red); background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 8px 12px; display: none; }
+    .error-msg.visible { display: block; }
+
+    .divider { height: 1px; background: var(--bd); margin: 20px 0; }
+    .card-footer { text-align: center; font-size: 13px; color: var(--tx2); }
+
+    @media (max-width: 480px) {
+      .card { padding: 22px 18px 20px; border-radius: 16px; }
+      .card-title { font-size: 20px; }
+    }
+  </style>
 </head>
-<body class="auth-page">
-  <header class="auth-topbar">
-    <div class="auth-topbar-inner">
-      <div class="auth-brand">
-        <img src="clg_logo.png" alt="" onerror="this.style.display='none'" />
-        <span>Campus AI</span>
-      </div>
-      <div class="dd-row">
-        <div class="dd-row-left">
-          <span>Light mode</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="theme-chk" />
-          <span class="toggle-track">
-            <span class="toggle-thumb"></span>
-          </span>
-        </label>
-      </div>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="clg_logo.png" alt="" onerror="this.style.display='none'" />
+      Campus AI
+    </div>
+    <div class="theme-row">
+      <span>Light</span>
+      <label class="tog">
+        <input type="checkbox" id="theme-chk" />
+        <span class="tog-track"><span class="tog-thumb"></span></span>
+      </label>
     </div>
   </header>
 
-  <main class="auth-container">
-    <section class="auth-box">
-      <h2>Create account</h2>
-      <p class="auth-sub">Start using Campus AI with your college details.</p>
+  <div class="page">
+    <div class="card">
+      <h2 class="card-title">Create account</h2>
+      <p class="card-sub">Sign up to start using Campus AI.</p>
 
-      <form onsubmit="event.preventDefault(); register();">
-        <input type="text" id="name" placeholder="Full Name" autocomplete="name" required />
-        <input
-          type="text"
-          id="register_number"
-          placeholder="Register Number"
-          autocomplete="username"
-          required
-        />
-        <input type="text" id="department" placeholder="Department" required />
-        <input type="number" id="year" placeholder="Year" min="1" max="5" required />
-        <input
-          type="password"
-          id="password"
-          placeholder="Password"
-          autocomplete="new-password"
-          required
-        />
-        <button type="submit">Create Account</button>
+      <form class="form" onsubmit="event.preventDefault(); doRegister();">
+
+        <!-- Full Name -->
+        <div class="field">
+          <span class="field-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <input type="text" id="name" placeholder="Full name" autocomplete="name" required />
+        </div>
+
+        <!-- Register Number -->
+        <div class="field">
+          <span class="field-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </span>
+          <input type="text" id="register_number" placeholder="Register number" autocomplete="username" required />
+        </div>
+
+        <!-- Department -->
+        <div class="field">
+          <span class="field-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </span>
+          <input type="text" id="department" placeholder="Department (e.g. B.Sc AI)" required />
+        </div>
+
+        <!-- Year -->
+        <div class="field">
+          <span class="field-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+          <select id="year" required>
+            <option value="" disabled selected>Select year</option>
+            <option value="1">Year 1</option>
+            <option value="2">Year 2</option>
+            <option value="3">Year 3</option>
+          </select>
+        </div>
+
+        <!-- Password -->
+        <div class="field">
+          <span class="field-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <input type="password" id="password" placeholder="Create a password" autocomplete="new-password" required />
+        </div>
+
+        <div class="error-msg" id="reg-error"></div>
+
+        <button type="submit" class="submit-btn" id="reg-btn">
+          <div class="spinner"></div>
+          <span class="btn-text">Create Account</span>
+        </button>
       </form>
 
-      <p>Already have an account? <a href="login.html">Log in</a></p>
-    </section>
-  </main>
+      <div class="divider"></div>
+      <div class="card-footer">Already have an account? <a href="login.html">Sign in</a></div>
+    </div>
+  </div>
 
   <script>
-    const themeKey = "campus_ai_theme_v5";
-    const themeChk = document.getElementById("theme-chk");
+    const BASE_URL  = "https://newclg-bot-backend.onrender.com";
+    const THEME_KEY = "campus_ai_theme_v5";
+    const themeChk  = document.getElementById("theme-chk");
     const themeMeta = document.getElementById("theme-color-meta");
-    const currentTheme = localStorage.getItem(themeKey) || "dark";
 
-    document.documentElement.setAttribute("data-theme", currentTheme);
-    themeChk.checked = currentTheme === "light";
-    themeMeta.content = currentTheme === "light" ? "#ffffff" : "#212121";
+    function applyTheme(light) {
+      document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+      themeChk.checked  = light;
+      themeMeta.content = light ? "#ffffff" : "#111111";
+      localStorage.setItem(THEME_KEY, light ? "light" : "dark");
+    }
+    applyTheme(localStorage.getItem(THEME_KEY) === "light");
+    themeChk.addEventListener("change", () => applyTheme(themeChk.checked));
 
-    themeChk.addEventListener("change", () => {
-      const newTheme = themeChk.checked ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", newTheme);
-      localStorage.setItem(themeKey, newTheme);
-      themeMeta.content = newTheme === "light" ? "#ffffff" : "#212121";
-    });
+    function showErr(msg) {
+      const el = document.getElementById("reg-error");
+      el.textContent = msg;
+      el.classList.add("visible");
+    }
+    function clearErr() {
+      document.getElementById("reg-error").classList.remove("visible");
+    }
+
+    async function doRegister() {
+      clearErr();
+      const name            = document.getElementById("name").value.trim();
+      const register_number = document.getElementById("register_number").value.trim();
+      const department      = document.getElementById("department").value.trim();
+      const year            = document.getElementById("year").value;
+      const password        = document.getElementById("password").value;
+
+      if (!name || !register_number || !department || !year || !password) {
+        showErr("Please fill in all fields."); return;
+      }
+
+      const btn = document.getElementById("reg-btn");
+      btn.disabled = true; btn.classList.add("loading");
+
+      try {
+        const res  = await fetch(BASE_URL + "/auth/register", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ name, register_number, department, year: parseInt(year), password }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          window.location.href = "login.html";
+        } else {
+          showErr(data.error || "Registration failed. Please try again.");
+        }
+      } catch {
+        showErr("Network error. Check your connection.");
+      } finally {
+        btn.disabled = false; btn.classList.remove("loading");
+      }
+    }
   </script>
-  <script src="auth.js"></script>
 </body>
 </html>
