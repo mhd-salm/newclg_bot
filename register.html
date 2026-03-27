@@ -174,6 +174,41 @@
       localStorage.setItem(THEME_KEY, light ? "light" : "dark");
     }
     applyTheme(localStorage.getItem(THEME_KEY) === "light");
+        // Load departments on page load
+    async function loadDepartments() {
+      try {
+        const res = await fetch(BASE_URL + '/departments');
+        if (!res.ok) throw new Error('Failed to fetch departments');
+        
+        const departments = await res.json();
+        const select = document.getElementById('department');
+        
+        if (departments.length === 0) {
+          select.innerHTML = '<option value="" disabled selected>No departments available</option>';
+          return;
+        }
+        
+        select.innerHTML = '<option value="" disabled selected>Select department</option>';
+        departments.forEach(dept => {
+          const option = document.createElement('option');
+          option.value = dept;
+          option.textContent = dept;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading departments:', error);
+        const select = document.getElementById('department');
+        select.innerHTML = '<option value="" disabled selected>Error loading departments</option>';
+      }
+    }
+
+    // Load departments when page is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadDepartments);
+    } else {
+      loadDepartments();
+    }
+
     themeChk.addEventListener("change", () => applyTheme(themeChk.checked));
 
     function showErr(msg) {
